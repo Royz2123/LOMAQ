@@ -1,3 +1,8 @@
+from envs.traffic.small_grid.build_file import main
+
+main()
+exit()
+
 import numpy as np
 import os
 import collections
@@ -12,6 +17,7 @@ from utils.logging import get_logger
 import yaml
 
 from run import run
+
 
 SETTINGS['CAPTURE_MODE'] = "fd" # set to "no" if you want to see stdout/stderr in console
 logger = get_logger()
