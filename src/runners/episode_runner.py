@@ -91,8 +91,9 @@ class EpisodeRunner:
             }
 
             self.batch.update(post_transition_data, ts=self.t)
-
             self.t += 1
+
+        # print(f"Episode Return {episode_return}")
 
         last_data = {
             "state": [self.env.get_state()],

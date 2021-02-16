@@ -2,8 +2,8 @@ env: multi_cart
 
 env_args:
   cartdist: 4
-  num_cartpoles: 5
-  obs_radius: 0
+  num_cartpoles: 2
+  obs_radius: 1
   seed: null
 
 test_greedy: True

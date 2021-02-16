@@ -39,7 +39,8 @@ if __name__ == '__main__':
         while not done['__all__']:
             actions = {ts: ql_agents[ts].act() for ts in ql_agents.keys()}
 
-            s, r, done, info = env.step(action=actions)
+            r, done, info = env.step(action=actions)
+            s=env.get_state()
 
             for agent_id in s.keys():
                 ql_agents[agent_id].learn(next_state=env.encode(s[agent_id], agent_id), reward=r[agent_id])

@@ -19,7 +19,6 @@ from components.transforms import OneHot
 
 
 def run(_run, _config, _log):
-
     # check args sanity
     _config = args_sanity_check(_config, _log)
 
@@ -74,13 +73,14 @@ def evaluate_sequential(args, runner):
 
     runner.close_env()
 
-def run_sequential(args, logger):
 
+def run_sequential(args, logger):
     # Init runner so we can get env info
     runner = r_REGISTRY[args.runner](args=args, logger=logger)
 
     # Set up schemes and groups here
     env_info = runner.get_env_info()
+
     args.n_agents = env_info["n_agents"]
     args.n_actions = env_info["n_actions"]
     args.state_shape = env_info["state_shape"]
@@ -158,6 +158,7 @@ def run_sequential(args, logger):
             return
 
     # start training
+    print("Starting Training")
     episode = 0
     last_test_T = -args.test_interval - 1
     last_log_T = 0
@@ -169,7 +170,6 @@ def run_sequential(args, logger):
     logger.console_logger.info("Beginning training for {} timesteps".format(args.t_max))
 
     while runner.t_env <= args.t_max:
-
         # Run for a whole episode at a time
         episode_batch = runner.run(test_mode=False)
         buffer.insert_episode_batch(episode_batch)
@@ -184,12 +184,16 @@ def run_sequential(args, logger):
             if episode_sample.device != args.device:
                 episode_sample.to(args.device)
 
+            # logger.console_logger.info("Starting Training")
             learner.train(episode_sample, runner.t_env, episode)
+            # logger.console_logger.info("Ending Training")
 
         # Execute test runs once in a while
         n_test_runs = max(1, args.test_nepisode // runner.batch_size)
         if (runner.t_env - last_test_T) / args.test_interval >= 1.0:
-
+            logger.console_logger.info("")
+            logger.console_logger.info("")
+            logger.console_logger.info("Starting Test")
             logger.console_logger.info("t_env: {} / {}".format(runner.t_env, args.t_max))
             logger.console_logger.info("Estimated time left: {}. Time passed: {}".format(
                 time_left(last_time, last_test_T, runner.t_env, args.t_max), time_str(time.time() - start_time)))
@@ -198,11 +202,14 @@ def run_sequential(args, logger):
             last_test_T = runner.t_env
             for _ in range(n_test_runs):
                 runner.run(test_mode=True)
+            logger.console_logger.info("Ending Test")
+            logger.console_logger.info("")
+            logger.console_logger.info("")
 
         if args.save_model and (runner.t_env - model_save_time >= args.save_model_interval or model_save_time == 0):
             model_save_time = runner.t_env
             save_path = os.path.join(args.local_results_path, "models", args.unique_token, str(runner.t_env))
-            #"results/models/{}".format(unique_token)
+            # "results/models/{}".format(unique_token)
             os.makedirs(save_path, exist_ok=True)
             logger.console_logger.info("Saving models to {}".format(save_path))
 
@@ -222,7 +229,6 @@ def run_sequential(args, logger):
 
 
 def args_sanity_check(config, _log):
-
     # set CUDA flags
     # config["use_cuda"] = True # Use cuda whenever possible!
     if config["use_cuda"] and not th.cuda.is_available():
@@ -232,6 +238,6 @@ def args_sanity_check(config, _log):
     if config["test_nepisode"] < config["batch_size_run"]:
         config["test_nepisode"] = config["batch_size_run"]
     else:
-        config["test_nepisode"] = (config["test_nepisode"]//config["batch_size_run"]) * config["batch_size_run"]
+        config["test_nepisode"] = (config["test_nepisode"] // config["batch_size_run"]) * config["batch_size_run"]
 
     return config
