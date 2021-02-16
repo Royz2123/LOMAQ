@@ -3,5 +3,5 @@ export DISPLAY=localhost:0.0
 export SUMO_HOME=/usr/share/sumo
 export PYTHONPATH=$SUMO_HOME/tools:$PYTHONPATH
 
-python3 src/main.py --config=iql --env-config=traffic
+python3 src/test_env.py
 

@@ -1,5 +1,6 @@
 .idea/
 ./src/idea/
+results/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

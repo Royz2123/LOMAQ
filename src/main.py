@@ -1,8 +1,3 @@
-from envs.traffic.small_grid.build_file import main
-
-main()
-exit()
-
 import numpy as np
 import os
 import collections
