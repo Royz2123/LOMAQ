@@ -103,8 +103,13 @@ if __name__ == '__main__':
     plt.figure()
 
     # File reading and grouping
-    for learner_path in [f"{exp_path}{name}/" for name in os.listdir(exp_path)]:
+    labels = []
+    for learner_name in os.listdir(exp_path):
+        learner_path = f"{exp_path}{learner_name}/"
+
         if os.path.isdir(learner_path):
+            labels.append(learner_name)
+
             main_df = pd.DataFrame()
             for f in glob.glob(learner_path + '*'):
                 df = pd.read_csv(f, sep=args.sep)
@@ -117,10 +122,11 @@ if __name__ == '__main__':
             simple_plot_df(main_df,
                     xaxis=args.xaxis,
                     yaxis=args.yaxis,
-                    # label=next(labels),
+                    label=learner_name,
                     color=next(colors),
                     ma=args.ma)
 
+    plt.legend(labels)
     plt.title(args.t)
     plt.ylabel("Reward")
     plt.xlabel("Timesteps Enviroment")
