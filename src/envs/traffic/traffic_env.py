@@ -11,19 +11,27 @@ BASE_PATH = "./src/envs/traffic/nets/"
 
 
 class TrafficEnv(SumoEnvironment, MultiAgentEnv):
-    def __init__(self, seed=None, use_gui=True):
-        self.results_output = f"./results/traffic/{time.time()}/"
-        os.mkdir(self.results_output)
-        self.results_csv = f"{self.results_output}/output.csv"
-
+    def __init__(
+            self,
+            seed=None,
+            use_gui=False,
+            exp_logger=None,
+            learner_name="default_learner"
+    ):
         self.use_gui = use_gui
+
+        # Logging stuff
+        self.exp_logger = exp_logger
+        self.output_path = f"{self.exp_logger.learner_name_to_path(learner_name)}output"
+        self.episode_data = []
+        self.learner_name = learner_name
 
         super().__init__(
             f'{BASE_PATH}4x4-Lucas/4x4.net.xml',
             f'{BASE_PATH}4x4-Lucas/4x4c1c2c1c2.rou.xml',
-            out_csv_name=self.results_csv,
+            out_csv_name=None,
             use_gui=use_gui,
-            num_seconds=1000,
+            num_seconds=100,
             max_depart_delay=0
         )
 
@@ -82,3 +90,26 @@ class TrafficEnv(SumoEnvironment, MultiAgentEnv):
 
     def render(self):
         pass
+
+    def reset(self):
+        self.episode_data = []
+        SumoEnvironment.reset(self)
+
+    def save_step(self, t_env, step_reward):
+        # Save the current step
+        if self.exp_logger is not None:
+            self.episode_data.append({
+                "t_env": t_env,
+                "step_reward": step_reward,
+                "episode_reward": None,
+            })
+
+    def save_episode(self, t_env, episode_reward):
+        # Save the episode
+        if self.exp_logger is not None:
+            self.episode_data.append({
+                "t_env": t_env,
+                "step_reward": 0.0,
+                "episode_reward": episode_reward,
+            })
+            self.exp_logger.save_episode(self.learner_name, self.episode_data)

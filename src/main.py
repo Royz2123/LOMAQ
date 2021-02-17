@@ -11,29 +11,16 @@ import torch as th
 from utils.logging import get_logger
 import yaml
 
+from components.exp_logger import ExperimentLogger
 from run import run
 
-
-SETTINGS['CAPTURE_MODE'] = "fd" # set to "no" if you want to see stdout/stderr in console
+SETTINGS['CAPTURE_MODE'] = "fd"  # set to "no" if you want to see stdout/stderr in console
 logger = get_logger()
-
-ex = Experiment("pymarl")
-ex.logger = logger
-ex.captured_out_filter = apply_backspaces_and_linefeeds
 
 results_path = os.path.join(dirname(dirname(abspath(__file__))), "results")
 
 
-@ex.main
-def my_main(_run, _config, _log):
-    # Setting the random seed throughout the modules
-    config = config_copy(_config)
-    np.random.seed(config["seed"])
-    th.manual_seed(config["seed"])
-    config['env_args']['seed'] = config["seed"]
 
-    # run the framework
-    run(_run, config, _log)
 
 
 def _get_config(params, arg_name, subfolder):
@@ -44,13 +31,23 @@ def _get_config(params, arg_name, subfolder):
             del params[_i]
             break
 
+    if "," in config_name:
+        config_d = [get_config_dict(name, subfolder) for name in config_name.split(",")]
+    else:
+        config_d = [get_config_dict(config_name, subfolder)]
+
+    return config_d
+
+
+def get_config_dict(config_name, subfolder):
     if config_name is not None:
-        with open(os.path.join(os.path.dirname(__file__), "config", subfolder, "{}.yaml".format(config_name)), "r") as f:
+        with open(os.path.join(os.path.dirname(__file__), "config", subfolder, "{}.yaml".format(config_name)),
+                  "r") as f:
             try:
-                config_dict = yaml.load(f)
+                config_d = yaml.load(f)
             except yaml.YAMLError as exc:
                 assert False, "{}.yaml error: {}".format(config_name, exc)
-        return config_dict
+        return config_d
 
 
 def recursive_dict_update(d, u):
@@ -77,24 +74,51 @@ if __name__ == '__main__':
     # Get the defaults from default.yaml
     with open(os.path.join(os.path.dirname(__file__), "config", "default.yaml"), "r") as f:
         try:
-            config_dict = yaml.load(f)
+            default_config = yaml.load(f)
         except yaml.YAMLError as exc:
             assert False, "default.yaml error: {}".format(exc)
 
     # Load algorithm and env base configs
-    env_config = _get_config(params, "--env-config", "envs")
-    alg_config = _get_config(params, "--config", "algs")
-    # config_dict = {**config_dict, **env_config, **alg_config}
-    config_dict = recursive_dict_update(config_dict, env_config)
-    config_dict = recursive_dict_update(config_dict, alg_config)
+    env_config = _get_config(params, "--env-config", "envs")[0]
+    alg_configs = _get_config(params, "--config", "algs")
 
-    # now add all the config to sacred
-    ex.add_config(config_dict)
+    # Load my Experiment Logger object for personal testing
+    exp_logger = ExperimentLogger(
+        env_name=env_config["env"],
+        exp_name=None
+    )
+    default_config["exp_logger"] = exp_logger
 
-    # Save to disk by default for sacred
-    logger.info("Saving to FileStorageObserver in results/sacred.")
-    file_obs_path = os.path.join(results_path, "sacred")
-    ex.observers.append(FileStorageObserver.create(file_obs_path))
+    for alg_config in alg_configs:
+        config_dict = default_config.copy()
+        config_dict = recursive_dict_update(config_dict, env_config)
+        config_dict = recursive_dict_update(config_dict, alg_config)
 
-    ex.run_commandline(params)
+        exp_logger.add_learner(config_dict["name"])
 
+        ex = Experiment("pymarl")
+        ex.logger = logger
+        ex.captured_out_filter = apply_backspaces_and_linefeeds
+
+        @ex.main
+        def my_main(_run, _config, _log):
+            # Setting the random seed throughout the modules
+            config = config_copy(_config)
+            np.random.seed(config["seed"])
+            th.manual_seed(config["seed"])
+            config['env_args']['seed'] = config["seed"]
+
+            # run the framework
+            run(_run, config, _log)
+
+        # now add all the config to sacred
+        ex.add_config(config_dict)
+
+        # Save to disk by default for sacred
+        logger.info("Saving to FileStorageObserver in results/sacred.")
+        file_obs_path = os.path.join(results_path, "sacred")
+        print(file_obs_path)
+
+        ex.observers.append(FileStorageObserver.create(file_obs_path))
+
+        ex.run_commandline(params)

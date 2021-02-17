@@ -58,10 +58,10 @@ def run(_run, _config, _log):
             t.join(timeout=1)
             print("Thread joined")
 
-    print("Exiting script")
+    # print("Exiting script")
 
     # Making sure framework really exits
-    os._exit(os.EX_OK)
+    # os._exit(os.EX_OK)
 
 
 def evaluate_sequential(args, runner):
@@ -75,6 +75,10 @@ def evaluate_sequential(args, runner):
 
 
 def run_sequential(args, logger):
+    args.env_args["learner_name"] = args.name
+    args.env_args["exp_logger"] = args.exp_logger
+
+
     # Init runner so we can get env info
     runner = r_REGISTRY[args.runner](args=args, logger=logger)
 
@@ -158,7 +162,6 @@ def run_sequential(args, logger):
             return
 
     # start training
-    print("Starting Training")
     episode = 0
     last_test_T = -args.test_interval - 1
     last_log_T = 0

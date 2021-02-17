@@ -32,7 +32,9 @@ class MultiCartPoleEnv(MultiAgentEnv):
             obs_radius=constants.OBSERVATION_RADIUS,
             coupled=True,
             test_physics=False,
-            seed=None
+            seed=None,
+            exp_logger=None,
+            learner_name="default_learner"
     ):
         # Save parameters
         self.params = {
@@ -100,6 +102,11 @@ class MultiCartPoleEnv(MultiAgentEnv):
         self.viewer = None
         self.state = None
         self.steps_beyond_done = None
+
+        # Saving data per episode
+        self.learner_name = learner_name
+        self.exp_logger = exp_logger
+        self.episode_data = []
 
     def step(self, action):
         self.episode_steps += 1
@@ -199,6 +206,7 @@ class MultiCartPoleEnv(MultiAgentEnv):
         for cartpole in self.cartpoles:
             cartpole.reset()
 
+        self.episode_data = []
         self.steps_beyond_done = None
         self.episode_steps = 0
         return self.get_state()
@@ -238,10 +246,10 @@ class MultiCartPoleEnv(MultiAgentEnv):
                 end_spring_x = self.cartpoles[i + 1].state[0]
                 spring_length = end_spring_x - start_spring_x
 
-                l = (start_spring_x + abs(self.params["bottom_threshold"]))*self.params["scale"]
+                l = (start_spring_x + abs(self.params["bottom_threshold"])) * self.params["scale"]
                 l += self.params["screen"]["cartwidth"] / 2
 
-                r = (end_spring_x + abs(self.params["bottom_threshold"]))*self.params["scale"]
+                r = (end_spring_x + abs(self.params["bottom_threshold"])) * self.params["scale"]
                 r -= self.params["screen"]["cartwidth"] / 2
 
                 t = self.params["screen"]["carty"] + self.params["screen"]["springwidth"] / 2
@@ -259,3 +267,16 @@ class MultiCartPoleEnv(MultiAgentEnv):
         if self.viewer:
             self.viewer.close()
             self.viewer = None
+
+    def save_step(self, t_env, step_reward):
+        # No use for now in saving each time step, maybe later ther will be when we do independent cartpoles
+        pass
+
+    def save_episode(self, t_env, episode_reward):
+        if self.exp_logger is not None:
+            self.episode_data.append({
+                "t_env": t_env,
+                "step_reward": None,
+                "episode_reward": episode_reward,
+            })
+            self.exp_logger.save_episode(self.learner_name, self.episode_data)

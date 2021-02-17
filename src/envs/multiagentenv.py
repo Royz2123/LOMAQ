@@ -1,5 +1,7 @@
-class MultiAgentEnv(object):
+import os
 
+
+class MultiAgentEnv(object):
     def step(self, actions):
         """ Returns reward, terminated, info """
         raise NotImplementedError
@@ -52,7 +54,7 @@ class MultiAgentEnv(object):
         raise NotImplementedError
 
     def get_reward_size(self):
-        return (1, )
+        return (1,)
 
     def get_env_info(self):
         env_info = {"state_shape": self.get_state_size(),

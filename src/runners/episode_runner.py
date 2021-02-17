@@ -80,6 +80,10 @@ class EpisodeRunner:
             total_reward = np.sum(np.array(reward))
             episode_return += total_reward
 
+            # Save the step
+            if not test_mode:
+                self.env.save_step(t_env=(self.t_env + self.t), step_reward=total_reward)
+
             if test_mode:
                 # time.sleep(1)
                 self.env.render()
@@ -116,6 +120,9 @@ class EpisodeRunner:
 
         if not test_mode:
             self.t_env += self.t
+
+            # Save the episode
+            self.env.save_episode(t_env=self.t_env, episode_reward=episode_return)
 
         cur_returns.append(episode_return)
 
