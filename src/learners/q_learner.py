@@ -121,6 +121,18 @@ class QLearner:
             self.logger.log_stat("target_mean", (targets * mask).sum().item()/(mask_elems * self.args.n_agents), t_env)
             self.log_stats_t = t_env
 
+            self.args.exp_logger.save_learner_data(
+                learner_name=self.args.name,
+                learner_data={
+                    "t_env": t_env,
+                    "loss": loss.item(),
+                    "td_error": masked_td_error.abs().sum().item() / mask_elems,
+                    "grad_norm": grad_norm.clone().detach().numpy(),
+                    "q_taken_mean": (chosen_action_qvals * mask).sum().item()/(mask_elems * self.args.n_agents),
+                    "target_mean": (targets * mask).sum().item() / (mask_elems * self.args.n_agents)
+                }
+            )
+
     def _update_targets(self):
         self.target_mac.load_state(self.mac)
         if self.mixer is not None:

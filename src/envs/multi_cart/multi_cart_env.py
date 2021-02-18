@@ -274,9 +274,11 @@ class MultiCartPoleEnv(MultiAgentEnv):
 
     def save_episode(self, t_env, episode_reward):
         if self.exp_logger is not None:
-            self.episode_data.append({
-                "t_env": t_env,
-                "step_reward": None,
-                "episode_reward": episode_reward,
-            })
-            self.exp_logger.save_episode(self.learner_name, self.episode_data)
+            self.exp_logger.save_env_data(
+                learner_name=self.learner_name,
+                env_data={
+                    "t_env": t_env,
+                    "step_reward": None,
+                    "episode_reward": episode_reward,
+                }
+            )

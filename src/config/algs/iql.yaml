@@ -11,7 +11,7 @@ runner: "episode"
 buffer_size: 5000
 
 # update the target network every {} episodes
-target_update_interval: 100 # was 200
+target_update_interval: 50 # was 200
 
 # use the Q_Learner to train
 agent_output_type: "q"

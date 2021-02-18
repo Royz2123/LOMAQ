@@ -28,8 +28,8 @@ sns.set_palette(colors)
 colors = cycle(colors)
 
 DEFAULT_COLS = {
-    "learner_data": ["loss", "td_error", "grad_norm", "q_taken_mean", "target_mean"],
-    "env_data": ["episode_reward"]
+    "multi_cart": "episode_reward",
+    "traffic": "step_reward"
 }
 
 
@@ -63,8 +63,6 @@ def simple_plot_df(df, color, xaxis, yaxis, ma=1, label=''):
     df = df.sort_values(by=[xaxis])
     plt.plot(df[xaxis], df[yaxis], label=label, color=color, linestyle=next(dashes_styles))
 
-    return df[xaxis], df[yaxis]
-
 
 if __name__ == '__main__':
     # get args
@@ -75,6 +73,7 @@ if __name__ == '__main__':
 
     prs.add_argument('-l', nargs='+', default=None, help="File's legends\n")
     prs.add_argument('-t', type=str, default="", help="Plot title\n")
+    prs.add_argument("-yaxis", type=str, default=None, help="The column to plot.\n")
     prs.add_argument("-xaxis", type=str, default='t_env', help="The x axis.\n")
     prs.add_argument("-ma", type=int, default=1, help="Moving Average Window.\n")
     prs.add_argument('-sep', type=str, default=',', help="Values separator on file.\n")
@@ -99,67 +98,42 @@ if __name__ == '__main__':
         exp_name = sorted(os.listdir(env_path))[-1]
     exp_path = f"{env_path}{exp_name}/"
 
+    # Choose column to plot
+    if args.yaxis is None:
+        args.yaxis = DEFAULT_COLS[env_name]
+
     plt.figure()
 
     # File reading and grouping
-    general_plots = {}
     labels = []
     for learner_name in os.listdir(exp_path):
         learner_path = f"{exp_path}{learner_name}/"
-        plots_path = f"{learner_path}plots/"
-
-        try:
-            os.mkdir(plots_path)
-        except OSError as e:
-            pass
 
         if os.path.isdir(learner_path):
             labels.append(learner_name)
-            for log_type_name in os.listdir(learner_path):
-                log_type_name = log_type_name.split(".")[0]
-                log_file = f"{learner_path}{log_type_name}.csv"
-                if os.path.isfile(log_file):
-                    df = pd.read_csv(log_file, sep=args.sep)
 
-                    # Plot DataFrame
-                    for col_name in DEFAULT_COLS[log_type_name]:
-                        x, y = simple_plot_df(df,
-                                              xaxis=args.xaxis,
-                                              yaxis=col_name,
-                                              label=learner_name,
-                                              color=next(colors),
-                                              ma=args.ma)
+            main_df = pd.DataFrame()
+            for f in glob.glob(learner_path + '*'):
+                df = pd.read_csv(f, sep=args.sep)
+                if main_df.empty:
+                    main_df = df
+                else:
+                    main_df = pd.concat((main_df, df))
 
-                        # plt.title(args.t)
-                        # plt.ylabel(col_name)
-                        # plt.xlabel(args.xaxis)
+            # Plot DataFrame
+            simple_plot_df(main_df,
+                    xaxis=args.xaxis,
+                    yaxis=args.yaxis,
+                    label=learner_name,
+                    color=next(colors),
+                    ma=args.ma)
 
-                        key = f"{log_type_name}_{col_name}"
-                        plt.savefig(f"{plots_path}{key}_output.pdf", bbox_inches="tight")
-                        plt.clf()
+    plt.legend(labels)
+    plt.title(args.t)
+    plt.ylabel("Reward")
+    plt.xlabel("Timesteps Enviroment")
+    # plt.ylim(bottom=0)
 
-                        # Save data for combined plots
-                        if key not in general_plots.keys():
-                            general_plots[key] = []
-                        general_plots[key].append((learner_name, x, y))
+    plt.savefig(f"{exp_path}output.pdf", bbox_inches="tight")
 
-    # Plot combined plots and save
-    plots_path = f"{exp_path}combined_plots/"
-
-    try:
-        os.mkdir(plots_path)
-    except OSError as e:
-        pass
-
-    for key, data in general_plots.items():
-        for learner_data in data:
-            learner_name, x, y = learner_data
-            plt.plot(x, y, label=learner_name, color=next(colors), linestyle=next(dashes_styles))
-
-        plt.legend(labels)
-        # plt.title(args.t)
-        # plt.ylabel(key)
-        # plt.xlabel(args.xaxis)
-
-        plt.savefig(f"{plots_path}{key}_output.pdf", bbox_inches="tight")
-        plt.clf()
+    plt.show()

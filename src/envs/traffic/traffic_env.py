@@ -31,7 +31,7 @@ class TrafficEnv(SumoEnvironment, MultiAgentEnv):
             f'{BASE_PATH}4x4-Lucas/4x4c1c2c1c2.rou.xml',
             out_csv_name=None,
             use_gui=use_gui,
-            num_seconds=100,
+            num_seconds=1000,
             max_depart_delay=0
         )
 

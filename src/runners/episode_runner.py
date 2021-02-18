@@ -24,6 +24,8 @@ class EpisodeRunner:
         self.train_stats = {}
         self.test_stats = {}
 
+        self.n_episodes = 0
+
         # Log the first run
         self.log_train_stats_t = -1000000
 
@@ -44,6 +46,7 @@ class EpisodeRunner:
     def reset(self):
         self.batch = self.new_batch()
         self.env.reset()
+        self.n_episodes += 1
         self.t = 0
 
     def run(self, test_mode=False):
@@ -81,8 +84,8 @@ class EpisodeRunner:
             episode_return += total_reward
 
             # Save the step
-            if not test_mode:
-                self.env.save_step(t_env=(self.t_env + self.t), step_reward=total_reward)
+            # if not test_mode:
+            #     self.env.save_step(t_env=(self.t_env + self.t), step_reward=total_reward)
 
             if test_mode:
                 # time.sleep(1)
@@ -122,7 +125,7 @@ class EpisodeRunner:
             self.t_env += self.t
 
             # Save the episode
-            self.env.save_episode(t_env=self.t_env, episode_reward=episode_return)
+            # self.env.save_episode(t_env=self.t_env, episode_reward=episode_return)
 
         cur_returns.append(episode_return)
 
@@ -133,6 +136,16 @@ class EpisodeRunner:
             if hasattr(self.mac.action_selector, "epsilon"):
                 self.logger.log_stat("epsilon", self.mac.action_selector.epsilon, self.t_env)
             self.log_train_stats_t = self.t_env
+
+            self.args.exp_logger.save_env_data(
+                learner_name=self.args.name,
+                env_data={
+                    "t_env": self.t_env,
+                    "episode": self.n_episodes,
+                    "epsilon": self.mac.action_selector.epsilon,
+                    "episode_reward": episode_return,
+                }
+            )
 
         return self.batch
 
