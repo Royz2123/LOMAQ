@@ -6,6 +6,7 @@ import argparse
 import glob
 from itertools import cycle
 import os
+from scipy.ndimage import uniform_filter1d
 
 from envs import REGISTRY as env_REGISTRY
 
@@ -41,7 +42,7 @@ def moving_average(interval, window_size):
     return np.convolve(interval, window, 'same')
 
 
-def plot_df(df, color, xaxis, yaxis, ma=1, label=''):
+def plot_df(df, color, xaxis, yaxis, ma=5, label=''):
     df[yaxis] = pd.to_numeric(df[yaxis], errors='coerce')  # convert NaN string to NaN value
 
     mean = df.groupby(xaxis).mean()[yaxis]
@@ -55,6 +56,7 @@ def plot_df(df, color, xaxis, yaxis, ma=1, label=''):
     plt.plot(x, mean, label=label, color=color, linestyle=next(dashes_styles))
     plt.fill_between(x, mean + std, mean - std, alpha=0.25, color=color, rasterized=True)
 
+    return x, mean
     # plt.ylim([0,200])
     # plt.xlim([40000, 70000])
 
@@ -62,9 +64,27 @@ def plot_df(df, color, xaxis, yaxis, ma=1, label=''):
 def simple_plot_df(df, color, xaxis, yaxis, ma=1, label=''):
     df.dropna(subset=[yaxis], inplace=True)
     df = df.sort_values(by=[xaxis])
-    plt.plot(df[xaxis], df[yaxis], label=label, color=color, linestyle=next(dashes_styles))
 
-    return df[xaxis], df[yaxis]
+    x = df[xaxis]
+    y = df[yaxis]
+
+    if ma > 1:
+        y_mean = uniform_filter1d(y, size=ma)
+
+    # create stds
+    datarep = np.tile(y, (ma, 1))
+    for i in range(1, ma):
+        datarep[i, i:] = datarep[i, :-i]
+    y_std = np.sqrt(np.mean(np.square(datarep - y_mean[None, :]), 0))
+
+    plot_by_mean_and_std(x, y_mean, y_std, color)
+
+    return x, y_mean, y_std
+
+
+def plot_by_mean_and_std(x, y_mean, y_std, color):
+    plt.plot(x, y_mean, color=color, linestyle=next(dashes_styles))
+    plt.fill_between(x, y_mean + y_std, y_mean - y_std, alpha=0.25, color=color, rasterized=True)
 
 
 def displayable_name(name):
@@ -143,12 +163,12 @@ if __name__ == '__main__':
 
                     # Plot DataFrame
                     for col_name in DEFAULT_COLS[log_type_name]:
-                        x, y = simple_plot_df(df,
-                                              xaxis=args.xaxis,
-                                              yaxis=col_name,
-                                              label=learner_name,
-                                              color=next(colors),
-                                              ma=args.ma)
+                        x, y_mean, y_std = simple_plot_df(df,
+                                                          xaxis=args.xaxis,
+                                                          yaxis=col_name,
+                                                          label=learner_name,
+                                                          color=next(colors),
+                                                          ma=50)
 
                         label_fig(
                             [],
@@ -162,7 +182,7 @@ if __name__ == '__main__':
                         # Save data for combined plots
                         if key not in general_plots.keys():
                             general_plots[key] = []
-                        general_plots[key].append((displayable_name(learner_name), x, y))
+                        general_plots[key].append((displayable_name(learner_name), x, y_mean, y_std))
 
     # Plot combined plots and save
     plots_path = f"{exp_path}combined_plots/"
@@ -174,8 +194,8 @@ if __name__ == '__main__':
 
     for key, data in general_plots.items():
         for learner_data in data:
-            learner_name, x, y = learner_data
-            plt.plot(x, y, label=learner_name, color=next(colors), linestyle=next(dashes_styles))
+            learner_name, x, y_mean, y_std = learner_data
+            plot_by_mean_and_std(x, y_mean, y_std, next(colors))
 
         # label the figure get rid of annoying "env_data" prefix
         label_fig(
