@@ -1,6 +1,8 @@
 .idea/
 ./src/idea/
-results/
+results/multi_cart
+results/sacred
+results/traffic
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
