@@ -1,17 +1,15 @@
 import copy
 from components.episode_buffer import EpisodeBatch
-from modules.mixers.vdn import VDNMixer
-from modules.mixers.qmix import QMixer
 import torch as th
 from torch.optim import RMSprop
 
-import numpy as np
+from modules.mixers.local_qmix import LocalQMixer
+from modules.mixers.vdn import VDNMixer
+from modules.mixers.qmix import QMixer
 
 
 class QLearner:
     def __init__(self, mac, scheme, logger, args):
-        self.local_observer = False
-
         self.args = args
         self.mac = mac
         self.logger = logger
@@ -20,12 +18,22 @@ class QLearner:
 
         self.last_target_update_episode = 0
 
+        # Observes rewards locally?
+        self.local_observer = False
+
+        # IQL observes each reward seperately
+        if args.name == "iql":
+            self.local_observer = True
+
         self.mixer = None
         if args.mixer is not None:
             if args.mixer == "vdn":
                 self.mixer = VDNMixer()
             elif args.mixer == "qmix":
                 self.mixer = QMixer(args)
+            elif args.mixer == "local_qmix":
+                self.mixer = LocalQMixer(args=args)
+                self.local_observer = True
             else:
                 raise ValueError("Mixer {} not recognised.".format(args.mixer))
             self.params += list(self.mixer.parameters())
@@ -41,7 +49,11 @@ class QLearner:
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
         # Get the relevant quantities
         # Sum up local rewards in last dimension (shouldn't affect other envs but worry about that later)
-        rewards = th.sum(batch["reward"], dim=-1, keepdims=True)[:, :-1]
+        if not self.local_observer:
+            rewards = th.sum(batch["reward"], dim=-1, keepdims=True)[:, :-1]
+        else:
+            rewards = batch["reward"][:, :-1]
+
         actions = batch["actions"][:, :-1]
         terminated = batch["terminated"][:, :-1].float()
         mask = batch["filled"][:, :-1].float()
@@ -87,11 +99,17 @@ class QLearner:
             chosen_action_qvals = self.mixer(chosen_action_qvals, batch["state"][:, :-1])
             target_max_qvals = self.target_mixer(target_max_qvals, batch["state"][:, 1:])
 
-        # Calculate 1-step Q-Learning targets
+        # Shape debugging putposes
         print(target_max_qvals.shape)
         print(rewards.shape)
-        exit()
+
+        # Calculate 1-step Q-Learning targets
         targets = rewards + self.args.gamma * (1 - terminated) * target_max_qvals
+
+        # Shape debugging putposes
+        print(((1 - terminated) * target_max_qvals).shape)
+        print(targets.shape)
+        exit()
 
         # Td-error
         td_error = (chosen_action_qvals - targets.detach())

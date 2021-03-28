@@ -15,9 +15,9 @@ target_update_interval: 50
 
 # use the Q_Learner to train
 agent_output_type: "q"
-learner: "local_q_learner"
+learner: "q_learner"
 double_q: True
-mixer: "qmix"
+mixer: "local_qmix"
 mixing_embed_dim: 32
 hypernet_layers: 2
 hypernet_embed: 64
