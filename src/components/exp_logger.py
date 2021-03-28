@@ -41,6 +41,14 @@ class ExperimentLogger:
         # document the config files
         self.log_configs(env_config, alg_configs)
 
+        # logging general runtime data, like parameters of the learners
+        self.runtime_data = {
+            "total parameters": {}
+        }
+
+    def log_runtime_data(self):
+        self.log_config_file(f"{self.config_path}runtime_data.yaml", self.runtime_data)
+
     def log_configs(self, env_config, alg_configs):
         # create config folder
         self.config_path = f"{self.exp_path}config/"

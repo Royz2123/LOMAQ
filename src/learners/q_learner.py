@@ -2,6 +2,7 @@ import copy
 from components.episode_buffer import EpisodeBatch
 import torch as th
 from torch.optim import RMSprop
+import numpy as np
 
 from modules.mixers.local_qmix import LocalQMixer
 from modules.mixers.vdn import VDNMixer
@@ -15,7 +16,6 @@ class QLearner:
         self.logger = logger
 
         self.params = list(mac.parameters())
-
         self.last_target_update_episode = 0
 
         # Observes rewards locally?
@@ -45,6 +45,16 @@ class QLearner:
         self.target_mac = copy.deepcopy(mac)
 
         self.log_stats_t = -self.args.learner_log_interval - 1
+
+        # find the #parameters of the learner
+        num_params = 0
+        for param_group in self.params:
+            model_parameters = filter(lambda p: p.requires_grad, param_group)
+            num_params += sum([np.prod(p.size()) for p in model_parameters])
+
+        # log #parameters
+        self.args.exp_logger.runtime_data["total parameters"][args.name] = num_params.tolist()
+        self.args.exp_logger.log_runtime_data()
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
         # Get the relevant quantities
@@ -96,6 +106,8 @@ class QLearner:
 
         # Mix
         if self.mixer is not None:
+            # Since we want to optimize the bellman equation, and the target refers to the
+            # next state, we do this 1: , :-1 trim to the state batch
             chosen_action_qvals = self.mixer(chosen_action_qvals, batch["state"][:, :-1])
             target_max_qvals = self.target_mixer(target_max_qvals, batch["state"][:, 1:])
 

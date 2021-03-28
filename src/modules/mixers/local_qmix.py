@@ -70,21 +70,29 @@ class SubMixer(nn.Module):
 
         self.agent_index = agent_index
         self.agent_nbrhood = agent_nbrhood
-
         self.args = args
-        self.n_agents = args.n_agents
         self.state_dim = int(np.prod(args.state_shape))
 
         self.embed_dim = args.mixing_embed_dim
 
+        # This part is critical for the submixers, could be the source of problems!
+        # In the original architecture, the mixer (i.e: submixer) recieves the inputs
+        # of all the different agents. This is why self.n_agents is saved.
+
+        # We do not want this! For ensuring purposes, I have deleted this row:
+        # self.n_agents = args.n_agents
+        # and instead switched it with the property of submixer_qs_size, which I set to
+        # be the size of the appropriate neighbourhood
+        self.submixer_qs_size = len(self.agent_nbrhood)
+
         if getattr(args, "hypernet_layers", 1) == 1:
-            self.hyper_w_1 = nn.Linear(self.state_dim, self.embed_dim * self.n_agents)
+            self.hyper_w_1 = nn.Linear(self.state_dim, self.embed_dim * self.submixer_qs_size)
             self.hyper_w_final = nn.Linear(self.state_dim, self.embed_dim)
         elif getattr(args, "hypernet_layers", 1) == 2:
             hypernet_embed = self.args.hypernet_embed
             self.hyper_w_1 = nn.Sequential(nn.Linear(self.state_dim, hypernet_embed),
                                            nn.ReLU(),
-                                           nn.Linear(hypernet_embed, self.embed_dim * self.n_agents))
+                                           nn.Linear(hypernet_embed, self.embed_dim * self.submixer_qs_size))
             self.hyper_w_final = nn.Sequential(nn.Linear(self.state_dim, hypernet_embed),
                                            nn.ReLU(),
                                            nn.Linear(hypernet_embed, self.embed_dim))
@@ -107,11 +115,11 @@ class SubMixer(nn.Module):
     def forward(self, agent_qs, states):
         bs = agent_qs.size(0)
         states = states.reshape(-1, self.state_dim)
-        agent_qs = agent_qs.view(-1, 1, self.n_agents)
+        agent_qs = agent_qs.view(-1, 1, self.submixer_qs_size)
         # First layer
         w1 = th.abs(self.hyper_w_1(states))
         b1 = self.hyper_b_1(states)
-        w1 = w1.view(-1, self.n_agents, self.embed_dim)
+        w1 = w1.view(-1, self.submixer_qs_size, self.embed_dim)
         b1 = b1.view(-1, 1, self.embed_dim)
         hidden = F.elu(th.bmm(agent_qs, w1) + b1)
         # Second layer
