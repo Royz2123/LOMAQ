@@ -3,8 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from modules.mixers.qmix import QMixer
-
 from components.locality_graph import DependencyGraph
 
 
@@ -63,7 +61,7 @@ class LocalQMixer(nn.Module):
             # Redirect States to SubMixers
             qs.append(sub_mixer.forward(relevant_qs, states))
 
-        return qs
+        return th.squeeze(th.stack(qs, dim=2))
 
 
 class SubMixer(nn.Module):

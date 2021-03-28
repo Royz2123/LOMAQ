@@ -85,7 +85,9 @@ if __name__ == '__main__':
     # Load my Experiment Logger object for personal testing
     exp_logger = ExperimentLogger(
         env_name=env_config["env"],
-        exp_name=None
+        exp_name=None,
+        env_config=env_config,
+        alg_configs=alg_configs,
     )
     default_config["exp_logger"] = exp_logger
 

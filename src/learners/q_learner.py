@@ -40,7 +40,7 @@ class QLearner:
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
         # Get the relevant quantities
-        # sum up local rewards in last dimension (shouldn't affect other envs but worry about that later)
+        # Sum up local rewards in last dimension (shouldn't affect other envs but worry about that later)
         rewards = th.sum(batch["reward"], dim=-1, keepdims=True)[:, :-1]
         actions = batch["actions"][:, :-1]
         terminated = batch["terminated"][:, :-1].float()
@@ -88,7 +88,9 @@ class QLearner:
             target_max_qvals = self.target_mixer(target_max_qvals, batch["state"][:, 1:])
 
         # Calculate 1-step Q-Learning targets
-        # print(rewards.shape)
+        print(target_max_qvals.shape)
+        print(rewards.shape)
+        exit()
         targets = rewards + self.args.gamma * (1 - terminated) * target_max_qvals
 
         # Td-error

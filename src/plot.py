@@ -26,6 +26,7 @@ colors = sns.color_palette("colorblind", 4)
 dashes_styles = cycle(['-', '-.', '--', ':'])
 sns.set_palette(colors)
 colors = cycle(colors)
+plt.rcParams["font.family"] = "serif"
 
 DEFAULT_COLS = {
     "learner_data": ["loss", "td_error", "grad_norm", "q_taken_mean", "target_mean"],
@@ -64,6 +65,21 @@ def simple_plot_df(df, color, xaxis, yaxis, ma=1, label=''):
     plt.plot(df[xaxis], df[yaxis], label=label, color=color, linestyle=next(dashes_styles))
 
     return df[xaxis], df[yaxis]
+
+
+def displayable_name(name):
+    return name.replace("_", " ").title()
+
+
+def label_fig(labels, xname, yname):
+    font = {}  # add custom font if needed
+
+    if len(labels):
+        plt.legend(labels, **font)
+
+    plt.title(f"{displayable_name(yname)} as a function of {displayable_name(xname)}", **font)
+    plt.ylabel(displayable_name(yname), **font)
+    plt.xlabel(displayable_name(xname), **font)
 
 
 if __name__ == '__main__':
@@ -105,6 +121,10 @@ if __name__ == '__main__':
     general_plots = {}
     labels = []
     for learner_name in os.listdir(exp_path):
+        # Should ignore these folders, not algorithms (Might be smart to put all algos in the same folder)
+        if learner_name in ["combined_plots", "config"]:
+            continue
+
         learner_path = f"{exp_path}{learner_name}/"
         plots_path = f"{learner_path}plots/"
 
@@ -114,7 +134,7 @@ if __name__ == '__main__':
             pass
 
         if os.path.isdir(learner_path):
-            labels.append(learner_name)
+            labels.append(displayable_name(learner_name))
             for log_type_name in os.listdir(learner_path):
                 log_type_name = log_type_name.split(".")[0]
                 log_file = f"{learner_path}{log_type_name}.csv"
@@ -130,10 +150,11 @@ if __name__ == '__main__':
                                               color=next(colors),
                                               ma=args.ma)
 
-                        # plt.title(args.t)
-                        # plt.ylabel(col_name)
-                        # plt.xlabel(args.xaxis)
-
+                        label_fig(
+                            [],
+                            args.xaxis,
+                            col_name,
+                        )
                         key = f"{log_type_name}_{col_name}"
                         plt.savefig(f"{plots_path}{key}_output.pdf", bbox_inches="tight")
                         plt.clf()
@@ -141,7 +162,7 @@ if __name__ == '__main__':
                         # Save data for combined plots
                         if key not in general_plots.keys():
                             general_plots[key] = []
-                        general_plots[key].append((learner_name, x, y))
+                        general_plots[key].append((displayable_name(learner_name), x, y))
 
     # Plot combined plots and save
     plots_path = f"{exp_path}combined_plots/"
@@ -156,10 +177,11 @@ if __name__ == '__main__':
             learner_name, x, y = learner_data
             plt.plot(x, y, label=learner_name, color=next(colors), linestyle=next(dashes_styles))
 
-        plt.legend(labels)
-        # plt.title(args.t)
-        # plt.ylabel(key)
-        # plt.xlabel(args.xaxis)
-
+        # label the figure get rid of annoying "env_data" prefix
+        label_fig(
+            labels,
+            args.xaxis,
+            "_".join(key.split("_")[2:]),
+        )
         plt.savefig(f"{plots_path}{key}_output.pdf", bbox_inches="tight")
         plt.clf()

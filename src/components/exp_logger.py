@@ -2,9 +2,11 @@ import os
 import time
 import csv
 
+import yaml
+
 
 class ExperimentLogger:
-    def __init__(self, env_name="default_env", exp_name=None):
+    def __init__(self, env_name="default_env", exp_name=None, env_config={}, alg_configs={}):
         # TODO: add seed to this thing
         self.exp_name = exp_name
         self.env_name = env_name
@@ -35,6 +37,29 @@ class ExperimentLogger:
 
         # list of learner path directories
         self.learners = {}
+
+        # document the config files
+        self.log_configs(env_config, alg_configs)
+
+    def log_configs(self, env_config, alg_configs):
+        # create config folder
+        self.config_path = f"{self.exp_path}config/"
+        try:
+            os.mkdir(self.config_path)
+        except OSError as e:
+            pass
+
+        # log environment config
+        self.log_config_file(f"{self.config_path}env_config.yaml", env_config)
+
+        # log algorithm config
+        for data in alg_configs:
+            self.log_config_file(f"{self.config_path}alg_config_{data['name']}.yaml", data)
+
+    def log_config_file(self, fname, data):
+        if len(data):
+            with open(fname, 'w') as file:
+                documents = yaml.dump(data, file)
 
     def learner_name_to_path(self, learner_name):
         return f"{self.exp_path}{learner_name}/"

@@ -50,7 +50,7 @@ class MultiCartPoleEnv(MultiAgentEnv):
             "test_physics": test_physics,
             "bottom_threshold": -constants.X_MARGIN,
             "top_threshold": (num_cartpoles - 1) * cartdist + constants.X_MARGIN,
-            "episode_limit": 1000,
+            "episode_limit": 500,
             "screen": {
                 "width": 1000,
                 "height": 400,
