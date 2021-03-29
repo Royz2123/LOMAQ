@@ -26,14 +26,20 @@ class LocalQMixer(nn.Module):
 
         # Each submixer needs to know the relevant agents that it is getting as input
         # TODO: Consider GNN, Convolution, Not just redirecting outputs
-        self.sub_mixers = []
-        for agent_index in range(self.n_agents):
-            agent_nbrhood = self.graph_obj.get_nbrhood(agent_index, depth_k)
-            self.sub_mixers.append(SubMixer(
+
+        # Notice that we store all the submixers in a nn.ModuleList. This is a f**ing
+        # genius feature of Pytorch which I just found, lets you store a list of nn.Modules
+        # in a single list and it recognizes their parameters automatically. Had some problems
+        # doing this manually, I hope this will work now.
+
+        self.sub_mixers = nn.ModuleList([
+            SubMixer(
                 agent_index=agent_index,
-                agent_nbrhood=agent_nbrhood,
+                agent_nbrhood=self.graph_obj.get_nbrhood(agent_index, depth_k),
                 args=args
-            ))
+            )
+            for agent_index in range(self.n_agents)
+        ])
 
     def forward(self, agent_qs, states):
         qs = []

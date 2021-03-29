@@ -5,6 +5,19 @@ import csv
 import yaml
 
 
+# for merging dictionaries
+def merge(source, destination):
+    for key, value in source.items():
+        if isinstance(value, dict):
+            # get node or create one
+            node = destination.setdefault(key, {})
+            merge(value, node)
+        else:
+            destination[key] = value
+
+    return destination
+
+
 class ExperimentLogger:
     def __init__(self, env_name="default_env", exp_name=None, env_config={}, alg_configs={}):
         # TODO: add seed to this thing
@@ -47,7 +60,15 @@ class ExperimentLogger:
         }
 
     def log_runtime_data(self):
-        self.log_config_file(f"{self.config_path}runtime_data.yaml", self.runtime_data)
+        fname = f"{self.config_path}runtime_data.yaml"
+        prev_data = self.read_config_file(fname)
+        combined_data = merge(prev_data, self.runtime_data)
+        print("\n" * 10)
+        print(prev_data)
+        print(self.runtime_data)
+        print(combined_data)
+        print("\n" * 10)
+        self.log_config_file(fname, combined_data)
 
     def log_configs(self, env_config, alg_configs):
         # create config folder
@@ -68,6 +89,15 @@ class ExperimentLogger:
         if len(data):
             with open(fname, 'w') as file:
                 documents = yaml.dump(data, file)
+
+    def read_config_file(self, fname):
+        try:
+            with open(fname, "r") as file:
+                return yaml.load(file, Loader=yaml.FullLoader)
+        except OSError as e:
+            print("Error")
+            print(e)
+            return {}
 
     def learner_name_to_path(self, learner_name):
         return f"{self.exp_path}{learner_name}/"

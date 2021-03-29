@@ -121,17 +121,15 @@ class MultiCartPoleEnv(MultiAgentEnv):
                 right_pos=None if i == (self.params["num_cartpoles"] - 1) else self.cartpoles[i + 1].state[0]
             )
 
+        rewards = [not cartpole.is_done() for cartpole in self.cartpoles]
         done = (
-                any([cartpole.is_done() for cartpole in self.cartpoles])
+                not all(rewards)
                 or self.episode_steps >= self.params["episode_limit"]
         )
 
-        if not done:
-            reward = 1.0
-        elif self.steps_beyond_done is None:
+        if self.steps_beyond_done is None:
             # One of the poles has fallen
             self.steps_beyond_done = 0
-            reward = 0.0
         else:
             if self.steps_beyond_done == 0:
                 logger.warn(
@@ -141,10 +139,9 @@ class MultiCartPoleEnv(MultiAgentEnv):
                     "True' -- any further steps are undefined behavior."
                 )
             self.steps_beyond_done += 1
-            reward = 1.0
 
         # return results
-        return [reward] * self.params["num_cartpoles"], done, {}
+        return rewards, done, {}
 
     def get_info(self):
         return "\n".join([

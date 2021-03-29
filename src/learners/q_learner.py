@@ -43,7 +43,6 @@ class QLearner:
 
         # a little wasteful to deepcopy (e.g. duplicates action selector), but should work for any MAC
         self.target_mac = copy.deepcopy(mac)
-
         self.log_stats_t = -self.args.learner_log_interval - 1
 
         # find the #parameters of the learner
@@ -112,24 +111,24 @@ class QLearner:
             target_max_qvals = self.target_mixer(target_max_qvals, batch["state"][:, 1:])
 
         # Shape debugging purposes
-        # print(target_max_qvals.shape)
-        # print(rewards.shape)
+        # print(f"Target Max qvals: {target_max_qvals.shape}")
+        # print(f"Chosen Action qvals: {chosen_action_qvals.shape}")
+        # print(f"Rewards: {rewards.shape}")
+        # print(f"Mask: {mask.shape}")
 
         # Calculate 1-step Q-Learning targets
         targets = rewards + self.args.gamma * (1 - terminated) * target_max_qvals
 
-        # Shape debugging purposes
-        # print(((1 - terminated) * target_max_qvals).shape)
-        # print(targets.shape)
-        # exit()
-
         # Td-error
         td_error = (chosen_action_qvals - targets.detach())
 
-        mask = mask.expand_as(td_error)
-
         # 0-out the targets that came from padded data
+        mask = mask.expand_as(td_error)
         masked_td_error = td_error * mask
+
+        # print(rewards[0])
+        # print(mask[0])
+        # exit()
 
         # Normal L2 loss, take mean over actual data
         loss = (masked_td_error ** 2).sum() / mask.sum()
