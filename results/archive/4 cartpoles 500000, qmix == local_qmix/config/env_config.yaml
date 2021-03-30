@@ -1,0 +1,13 @@
+env: multi_cart
+env_args:
+  cartdist: 4
+  num_cartpoles: 4
+  obs_radius: 1
+  seed: null
+learner_log_interval: 500
+log_interval: 20000
+runner_log_interval: 500
+t_max: 500000
+test_greedy: true
+test_interval: 20000
+test_nepisode: 10
