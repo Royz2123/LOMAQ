@@ -33,14 +33,14 @@ class MultiCartPoleEnv(MultiAgentEnv):
             num_cartpoles=constants.CARTPOLES,
             obs_radius=constants.OBSERVATION_RADIUS,
             coupled=True,
-            test_physics=False,
+            test_physics=True,
             seed=None,
             exp_logger=None,
             learner_name="default_learner"
     ):
         # Save parameters
         self.params = {
-            "cartdist": cartdist,
+            "cartdist": cartdist // 2 if test_physics else cartdist,
             "num_cartpoles": num_cartpoles,
             "obs_radius": obs_radius,
             "coupled": {
@@ -50,8 +50,8 @@ class MultiCartPoleEnv(MultiAgentEnv):
             },
             "seed": seed,
             "test_physics": test_physics,
-            "bottom_threshold": -constants.X_MARGIN,
-            "top_threshold": (num_cartpoles - 1) * cartdist + constants.X_MARGIN,
+            "bottom_threshold": -cartdist,
+            "top_threshold": cartdist * num_cartpoles,
             "episode_limit": 500,
             "screen": {
                 "width": 1000,
@@ -70,7 +70,8 @@ class MultiCartPoleEnv(MultiAgentEnv):
                 "kinematics_integrator": 'euler'
             },
             "rules": {
-                "wait_for_all": True
+                "wait_for_all": True,
+                "edge_springs": False
             }
         }
         self.params["world_width"] = self.params["top_threshold"] - self.params["bottom_threshold"]
@@ -80,6 +81,10 @@ class MultiCartPoleEnv(MultiAgentEnv):
         self.params["physics"]["total_mass"] = self.params["physics"]["masspole"] + self.params["physics"]["masscart"]
         self.params["physics"]["polemass_length"] = self.params["physics"]["masspole"] * self.params["physics"][
             "length"]
+
+        # spring base positions, start and finish
+        self.left_string_pos = self.params["bottom_threshold"] if self.params["rules"]["edge_springs"] else None
+        self.right_string_pos = self.params["top_threshold"] if self.params["rules"]["edge_springs"] else None
 
         # Other important parameters for pymarl
         self.episode_limit = self.params["episode_limit"]
@@ -128,8 +133,9 @@ class MultiCartPoleEnv(MultiAgentEnv):
             if self.cart_alive[i]:
                 self.cartpoles[i].step(
                     action[i],
-                    left_pos=None if i == 0 else self.cartpoles[i - 1].get_absolute_state()[0],
-                    right_pos=None if i == (self.params["num_cartpoles"] - 1) else self.cartpoles[i + 1].get_absolute_state()[0]
+                    left_pos=self.left_string_pos if i == 0 else self.cartpoles[i - 1].get_absolute_state()[0],
+                    right_pos=self.right_string_pos if i == (self.params["num_cartpoles"] - 1) else
+                    self.cartpoles[i + 1].get_absolute_state()[0]
                 )
 
         # get rewards for this run
@@ -252,6 +258,40 @@ class MultiCartPoleEnv(MultiAgentEnv):
         self.episode_steps = 0
         return self.get_state()
 
+    def get_spring_by_index(self, idx):
+        # 0 and n represent the edge springs, all the other ones are the inner springs
+        if idx == 0:
+            start_spring_x = self.params["bottom_threshold"]
+            end_spring_x = self.cartpoles[0].get_absolute_state()[0]
+        elif idx == self.params["num_cartpoles"]:
+            start_spring_x = self.cartpoles[idx - 1].get_absolute_state()[0]
+            end_spring_x = self.params["top_threshold"]
+        else:
+            start_spring_x = self.cartpoles[idx - 1].get_absolute_state()[0]
+            end_spring_x = self.cartpoles[idx].get_absolute_state()[0]
+
+        # find the spring position
+        spring_length = end_spring_x - start_spring_x
+
+        l = (start_spring_x + abs(self.params["bottom_threshold"])) * self.params["scale"]
+        l += self.params["screen"]["cartwidth"] / 2
+
+        r = (end_spring_x + abs(self.params["bottom_threshold"])) * self.params["scale"]
+        r -= self.params["screen"]["cartwidth"] / 2
+
+        t = self.params["screen"]["carty"] + self.params["screen"]["springwidth"] / 2
+        b = self.params["screen"]["carty"] - self.params["screen"]["springwidth"] / 2
+
+        spring_pos = [(l, b), (l, t), (r, t), (r, b)]
+
+        # create spring color
+        stretch = abs(spring_length - self.params["coupled"]["resting_dist"])
+        red = 0.5 + min(0.5, stretch / self.params["coupled"]["resting_dist"])
+        spring_color = (red, 0.1, 0.1)
+
+        # return spring positions and color
+        return spring_pos, spring_color
+
     def render(self, mode='human'):
         init = False
         if self.viewer is None:
@@ -264,45 +304,30 @@ class MultiCartPoleEnv(MultiAgentEnv):
         for cartpole in self.cartpoles:
             cartpole.render(viewer=self.viewer, init=init)
 
+        # render base springs
+        low_idx = 0 if self.params["rules"]["edge_springs"] else 1
+        high_idx = self.params["num_cartpoles"] if self.params["rules"]["edge_springs"] else (self.params["num_cartpoles"] - 1)
+
+        # render springs and background
         if self.params["coupled"]["mode"]:
-            # render springs and background
             if init:
                 # render springs
-                for i in range(self.params["num_cartpoles"] - 1):
-                    start_spring_x = self.cartpoles[i].get_absolute_state()[0]
-                    end_spring_x = self.cartpoles[i + 1].get_absolute_state()[0]
-                    spring_length = end_spring_x - start_spring_x
+                for i in range(low_idx, high_idx + 1):
+                    spring_pos, spring_color = self.get_spring_by_index(i)
 
-                    l, r = -spring_length / 2, spring_length / 2
-                    t, b = self.params["screen"]["springwidth"] / 2, -self.params["screen"]["springwidth"] / 2
+                    # create spring object
+                    spring = rendering.FilledPolygon(spring_pos)
+                    spring.set_color(*spring_color)
 
-                    l *= self.params["scale"]
-                    r *= self.params["scale"]
-
-                    spring = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])
                     self.viewer.add_geom(spring)
                     self.springs.append(spring)
 
-            # render springs
-            for i in range(self.params["num_cartpoles"] - 1):
-                start_spring_x = self.cartpoles[i].get_absolute_state()[0]
-                end_spring_x = self.cartpoles[i + 1].get_absolute_state()[0]
-                spring_length = end_spring_x - start_spring_x
+            # render springs again
+            for i, spring_idx in enumerate(range(low_idx, high_idx + 1)):
+                spring_pos, spring_color = self.get_spring_by_index(spring_idx)
 
-                l = (start_spring_x + abs(self.params["bottom_threshold"])) * self.params["scale"]
-                l += self.params["screen"]["cartwidth"] / 2
-
-                r = (end_spring_x + abs(self.params["bottom_threshold"])) * self.params["scale"]
-                r -= self.params["screen"]["cartwidth"] / 2
-
-                t = self.params["screen"]["carty"] + self.params["screen"]["springwidth"] / 2
-                b = self.params["screen"]["carty"] - self.params["screen"]["springwidth"] / 2
-                self.springs[i].v = [(l, b), (l, t), (r, t), (r, b)]
-
-                # set spring color
-                stretch = abs(spring_length - self.params["coupled"]["resting_dist"])
-                red = 0.5 + min(0.5, stretch / self.params["coupled"]["resting_dist"])
-                self.springs[i].set_color(red, 0.1, 0.1)
+                self.springs[i].v = spring_pos
+                self.springs[i].set_color(*spring_color)
 
         self.viewer.render(return_rgb_array=mode == 'rgb_array')
 
