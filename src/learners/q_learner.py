@@ -126,10 +126,6 @@ class QLearner:
         mask = mask.expand_as(td_error)
         masked_td_error = td_error * mask
 
-        # print(rewards[0])
-        # print(mask[0])
-        # exit()
-
         # Normal L2 loss, take mean over actual data
         loss = (masked_td_error ** 2).sum() / mask.sum()
 

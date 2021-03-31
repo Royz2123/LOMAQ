@@ -11,6 +11,8 @@ from gym.utils import seeding
 import numpy as np
 from gym.envs.classic_control import rendering
 
+import pyglet
+
 # Base class import
 from envs.multiagentenv import MultiAgentEnv
 
@@ -66,6 +68,9 @@ class MultiCartPoleEnv(MultiAgentEnv):
                 "force_mag": 10.0,
                 "tau": 0.02,
                 "kinematics_integrator": 'euler'
+            },
+            "rules": {
+                "wait_for_all": True
             }
         }
         self.params["world_width"] = self.params["top_threshold"] - self.params["bottom_threshold"]
@@ -100,7 +105,6 @@ class MultiCartPoleEnv(MultiAgentEnv):
 
         # self.seed()
         self.viewer = None
-        self.state = None
         self.steps_beyond_done = None
 
         # Saving data per episode
@@ -108,24 +112,41 @@ class MultiCartPoleEnv(MultiAgentEnv):
         self.exp_logger = exp_logger
         self.episode_data = []
 
+        # wait until all cartpoles are done?
+        self.cart_alive = [True for _ in range(self.params["num_cartpoles"])]
+        self.last_reward = -1
+        self.reward_label = None
+
     def step(self, action):
         self.episode_steps += 1
 
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
 
+        # take a step for each active cartpole
         for i in range(self.params["num_cartpoles"]):
-            self.cartpoles[i].step(
-                action[i],
-                left_pos=None if i == 0 else self.cartpoles[i - 1].state[0],
-                right_pos=None if i == (self.params["num_cartpoles"] - 1) else self.cartpoles[i + 1].state[0]
-            )
+            if self.cart_alive[i]:
+                self.cartpoles[i].step(
+                    action[i],
+                    left_pos=None if i == 0 else self.cartpoles[i - 1].get_absolute_state()[0],
+                    right_pos=None if i == (self.params["num_cartpoles"] - 1) else self.cartpoles[i + 1].get_absolute_state()[0]
+                )
 
+        # get rewards for this run
         rewards = [not cartpole.is_done() for cartpole in self.cartpoles]
-        done = (
-                not all(rewards)
-                or self.episode_steps >= self.params["episode_limit"]
-        )
+        self.last_reward = sum(rewards)
+
+        # update status of all cartpoles
+        self.cart_alive = [not cartpole.is_done() for cartpole in self.cartpoles]
+
+        # check if should terminate simultation
+        times_up = self.episode_steps >= self.params["episode_limit"]
+        if self.params["rules"]["wait_for_all"]:
+            any_alive = any(self.cart_alive)
+            done = times_up or (not any_alive)
+        else:
+            all_alive = all(self.cart_alive)
+            done = times_up or (not all_alive)
 
         if self.steps_beyond_done is None:
             # One of the poles has fallen
@@ -147,7 +168,7 @@ class MultiCartPoleEnv(MultiAgentEnv):
         return "\n".join([
                              "CARTPOLES INFO\n",
                          ] + [
-                             f"CARTPOLE {i}: {self.get_sub_states(i, 0)}"
+                             f"CARTPOLE {i}: {self.get_sub_states(i, 0, relative=False)}"
                              for i in range(self.params["num_cartpoles"])
                          ])
 
@@ -155,23 +176,46 @@ class MultiCartPoleEnv(MultiAgentEnv):
         obs = [self.get_obs_agent(i) for i in range(self.params["num_cartpoles"])]
         return np.array(obs)
 
-    def get_sub_states(self, agent_id, radius, pad=False):
-        agent_obs = np.array([
-            cartpole.state for cartpole in
-            self.cartpoles[
-            max(0, agent_id - radius)
-            : min(self.params["num_cartpoles"], agent_id + radius + 1)
-            ]
+    # Recieves all the substates from an agent_id in a certain radius. Returns the RELATIVE x by default
+    def get_sub_states(self, agent_id, radius, pad=False, relative=True):
+        # relative or absolute position on x axis - doing this thanks to Adi <3
+        if relative:
+            get_state_func = single_cart.SingleCart.get_relative_state
+        else:
+            get_state_func = single_cart.SingleCart.get_absolute_state
+
+        # left obs not including the agent
+        left_obs = np.array([
+            get_state_func(cartpole) for cartpole in
+            self.cartpoles[max(0, agent_id - radius): agent_id]
         ])
-        agent_obs = agent_obs.flatten()
+        right_obs = np.array([
+            get_state_func(cartpole) for cartpole in
+            self.cartpoles[agent_id: min(self.params["num_cartpoles"], agent_id + radius + 1)]
+        ])
+
+        # flatten both sides
+        left_obs = left_obs.flatten()
+        right_obs = right_obs.flatten()
 
         if pad:
-            agent_obs = np.pad(
-                agent_obs,
-                (0, self.get_obs_size() - agent_obs.shape[0]),
+            # left obs need to include "radius" cartpoles
+            left_obs = np.pad(
+                left_obs,
+                (radius * 4 - left_obs.shape[0], 0),
                 "constant",
                 constant_values=(0, 0)
             )
+
+            # right obs need to include "radius + 1" cartpoles
+            right_obs = np.pad(
+                right_obs,
+                (0, (radius + 1) * 4 - right_obs.shape[0]),
+                "constant",
+                constant_values=(0, 0)
+            )
+
+        agent_obs = np.concatenate((left_obs, right_obs))
         return agent_obs.flatten()
 
     def get_obs_agent(self, agent_id):
@@ -223,9 +267,10 @@ class MultiCartPoleEnv(MultiAgentEnv):
         if self.params["coupled"]["mode"]:
             # render springs and background
             if init:
+                # render springs
                 for i in range(self.params["num_cartpoles"] - 1):
-                    start_spring_x = self.cartpoles[i].state[0]
-                    end_spring_x = self.cartpoles[i + 1].state[0]
+                    start_spring_x = self.cartpoles[i].get_absolute_state()[0]
+                    end_spring_x = self.cartpoles[i + 1].get_absolute_state()[0]
                     spring_length = end_spring_x - start_spring_x
 
                     l, r = -spring_length / 2, spring_length / 2
@@ -238,9 +283,10 @@ class MultiCartPoleEnv(MultiAgentEnv):
                     self.viewer.add_geom(spring)
                     self.springs.append(spring)
 
+            # render springs
             for i in range(self.params["num_cartpoles"] - 1):
-                start_spring_x = self.cartpoles[i].state[0]
-                end_spring_x = self.cartpoles[i + 1].state[0]
+                start_spring_x = self.cartpoles[i].get_absolute_state()[0]
+                end_spring_x = self.cartpoles[i + 1].get_absolute_state()[0]
                 spring_length = end_spring_x - start_spring_x
 
                 l = (start_spring_x + abs(self.params["bottom_threshold"])) * self.params["scale"]
@@ -258,7 +304,7 @@ class MultiCartPoleEnv(MultiAgentEnv):
                 red = 0.5 + min(0.5, stretch / self.params["coupled"]["resting_dist"])
                 self.springs[i].set_color(red, 0.1, 0.1)
 
-        return self.viewer.render(return_rgb_array=mode == 'rgb_array')
+        self.viewer.render(return_rgb_array=mode == 'rgb_array')
 
     def close(self):
         if self.viewer:

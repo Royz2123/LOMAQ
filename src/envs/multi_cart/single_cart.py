@@ -6,6 +6,7 @@ import numpy as np
 from gym.envs.classic_control import rendering
 
 import random
+import time
 
 import envs.multi_cart.constants as constants
 
@@ -60,6 +61,11 @@ class SingleCart(object):
         self.offset = offset
         self.params = params
 
+        # geometric attributes
+        self._cart_geom = None
+        self._pole_geom = None
+        self._cart_color = random.random() / 2.0
+
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
@@ -74,7 +80,7 @@ class SingleCart(object):
                 if cart_pos is not None:
                     sign = 1 if i == 0 else -1
                     total_spring_force += self.params["coupled"]["spring_k"] * (
-                        cart_pos - x + sign * self.params["coupled"]["resting_dist"]
+                            cart_pos - x + sign * self.params["coupled"]["resting_dist"]
                     )
 
         # print(f"stats\n\n\n")
@@ -92,10 +98,14 @@ class SingleCart(object):
 
         # For the interested reader:
         # https://coneural.org/florian/papers/05_cart_pole.pdf
-        temp = (force + self.params["physics"]["polemass_length"] * theta_dot ** 2 * sintheta) / self.params["physics"]["total_mass"]
+        temp = (force + self.params["physics"]["polemass_length"] * theta_dot ** 2 * sintheta) / self.params["physics"][
+            "total_mass"]
         thetaacc = (constants.GRAVITY * sintheta - costheta * temp) / (
-                    self.params["physics"]["length"] * (4.0 / 3.0 - self.params["physics"]["masspole"] * costheta ** 2 / self.params["physics"]["total_mass"]))
-        xacc = temp - self.params["physics"]["polemass_length"] * thetaacc * costheta / self.params["physics"]["total_mass"]
+                self.params["physics"]["length"] * (
+                4.0 / 3.0 - self.params["physics"]["masspole"] * costheta ** 2 / self.params["physics"][
+            "total_mass"]))
+        xacc = temp - self.params["physics"]["polemass_length"] * thetaacc * costheta / self.params["physics"][
+            "total_mass"]
 
         if self.params["physics"]["kinematics_integrator"] == 'euler':
             x = x + self.params["physics"]["tau"] * x_dot
@@ -114,15 +124,22 @@ class SingleCart(object):
         self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
         self.state[0] += self.offset
 
+    def get_relative_state(self):
+        x, x_dot, theta, theta_dot = self.state
+        return [x - self.offset, x_dot, theta, theta_dot]
+
+    def get_absolute_state(self):
+        return self.state
+
     def is_done(self):
         x, x_dot, theta, theta_dot = self.state
 
         valid_pole = (
-            self.params["test_physics"]
-            or bool(
-                theta >= -constants.THETA_THRESHOLD_RADIANS
-                and theta <= constants.THETA_THRESHOLD_RADIANS
-            )
+                self.params["test_physics"]
+                or bool(
+            theta >= -constants.THETA_THRESHOLD_RADIANS
+            and theta <= constants.THETA_THRESHOLD_RADIANS
+        )
         )
         done = bool(
             x < self.params["bottom_threshold"]
@@ -150,8 +167,7 @@ class SingleCart(object):
 
             # set cart color
             random.seed(self.offset)
-            cart_color = random.random() / 2.0
-            cart.set_color(cart_color, cart_color, cart_color)
+            cart.set_color(self._cart_color, self._cart_color, self._cart_color)
 
             self.carttrans = rendering.Transform()
             cart.add_attr(self.carttrans)
@@ -175,13 +191,24 @@ class SingleCart(object):
             viewer.add_geom(self.axle)
 
             self._pole_geom = pole
+            self._cart_geom = cart
 
         if self.state is None:
             return None
 
+        # change color of finished poles
+        if self.is_done():
+            self._pole_geom.set_color(1.0, 0.2, 0.2)
+            self._cart_geom.set_color(1.0, 0.2, 0.2)
+        else:
+            self._pole_geom.set_color(0.8, 0.6, 0.4)
+            self._cart_geom.set_color(self._cart_color, self._cart_color, self._cart_color)
+
         # Edit the pole polygon vertex
         pole = self._pole_geom
-        l, r, t, b = -self.params["screen"]["polewidth"] / 2, self.params["screen"]["polewidth"] / 2, self.params["screen"]["polelen"] - self.params["screen"]["polewidth"] / 2, -self.params["screen"]["polewidth"] / 2
+        l, r, t, b = -self.params["screen"]["polewidth"] / 2, self.params["screen"]["polewidth"] / 2, \
+                     self.params["screen"]["polelen"] - self.params["screen"]["polewidth"] / 2, -self.params["screen"][
+            "polewidth"] / 2
         pole.v = [(l, b), (l, t), (r, t), (r, b)]
 
         x = self.state

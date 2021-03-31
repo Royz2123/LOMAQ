@@ -42,7 +42,7 @@ def moving_average(interval, window_size):
     return np.convolve(interval, window, 'same')
 
 
-def plot_df(df, color, xaxis, yaxis, ma=5, label=''):
+def plot_df(df, color, xaxis, yaxis, ma=20, label=''):
     df[yaxis] = pd.to_numeric(df[yaxis], errors='coerce')  # convert NaN string to NaN value
 
     mean = df.groupby(xaxis).mean()[yaxis]
