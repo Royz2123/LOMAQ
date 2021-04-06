@@ -1,0 +1,15 @@
+action_selector: epsilon_greedy
+agent_output_type: q
+buffer_size: 5000
+double_q: true
+epsilon_anneal_time: 50000
+epsilon_finish: 0.05
+epsilon_start: 1.0
+hypernet_embed: 64
+hypernet_layers: 2
+learner: q_learner
+mixer: qmix
+mixing_embed_dim: 32
+name: qmix
+runner: episode
+target_update_interval: 50

@@ -11,7 +11,7 @@ from components.locality_graph import DependencyGraph
 # and then we have an array of submixers
 
 class LocalQMixer(nn.Module):
-    def __init__(self, args, depth_k=2):
+    def __init__(self, args):
         super(LocalQMixer, self).__init__()
 
         self.args = args
@@ -21,8 +21,14 @@ class LocalQMixer(nn.Module):
 
         # Now optimally we will need a graph dependency between the nodes
         # For now, lets assume that all agents are in a line like in the multi_cart_pole setting
-        self.depth_k = depth_k
-        self.graph_obj = DependencyGraph(graph=None, num_agents=args.n_agents)
+        self.depth_k = self.args.depth_k
+        self.graph_obj = DependencyGraph(
+            graph=None,
+            num_agents=args.n_agents,
+        )
+
+        # create list of nbrhds in advance for every agent
+        self.nbrhds = [self.graph_obj.get_nbrhood(agent_index, self.depth_k) for agent_index in range(self.n_agents)]
 
         # Each submixer needs to know the relevant agents that it is getting as input
         # TODO: Consider GNN, Convolution, Not just redirecting outputs
@@ -32,18 +38,35 @@ class LocalQMixer(nn.Module):
         # in a single list and it recognizes their parameters automatically. Had some problems
         # doing this manually, I hope this will work now.
 
-        self.sub_mixers = nn.ModuleList([
-            SubMixer(
-                agent_index=agent_index,
-                agent_nbrhood=self.graph_obj.get_nbrhood(agent_index, depth_k),
-                args=args
-            )
-            for agent_index in range(self.n_agents)
-        ])
+        # parameter sharing
+        all_agents = list(range(args.n_agents))
+        non_sharing_agents = all_agents
+        shared_module = None
+
+        if self.args.parameter_sharing:
+            # for now assume that the edges need different sharing parameters
+            non_sharing_agents = all_agents[:self.depth_k] + all_agents[-self.depth_k:]
+
+            # We assume that every agent has the same subgraph apart from the non-sharing agents
+            shared_module = SharedSubMixer(args=args, nbrhds=self.nbrhds, shared_idx_example=self.depth_k)
+
+        # create the module_list base on who wants to share and who doesn't
+        module_list = []
+        for agent_index in range(self.n_agents):
+            if agent_index in non_sharing_agents:
+                module_list.append(SubMixer(
+                    agent_index=agent_index,
+                    agent_nbrhood=self.nbrhds[agent_index],
+                    args=args
+                ))
+            else:
+                module_list.append(shared_module)
+
+        self.sub_mixers = nn.ModuleList(module_list)
 
     def forward(self, agent_qs, states):
         qs = []
-        for sub_mixer in self.sub_mixers:
+        for idx, sub_mixer in enumerate(self.sub_mixers):
             # States shape is: [batch_size, max_ep_len, num_agents * state_size]
             # Agent_qs shape is: [batch_size, max_ep_len, num_agents]
             #
@@ -58,8 +81,9 @@ class LocalQMixer(nn.Module):
             # nbrhood. The submixer has this property stored (so that we don't compute
             # shortest path every time)
 
-            relevant_qs = agent_qs[:, :, sub_mixer.agent_nbrhood]
+            relevant_qs = agent_qs[:, :, sub_mixer.get_input_indexes(submixer_idx=idx)]
 
+            print(relevant_qs.shape)
             # So now the updated states are
             # States shape is: [batch_size, max_ep_len, num_agents * state_size] - consider truncated
             # Agent_qs shape is: [batch_size, max_ep_len, len(sub_mixer.agent_nbrhood)]
@@ -100,8 +124,8 @@ class SubMixer(nn.Module):
                                            nn.ReLU(),
                                            nn.Linear(hypernet_embed, self.embed_dim * self.submixer_qs_size))
             self.hyper_w_final = nn.Sequential(nn.Linear(self.state_dim, hypernet_embed),
-                                           nn.ReLU(),
-                                           nn.Linear(hypernet_embed, self.embed_dim))
+                                               nn.ReLU(),
+                                               nn.Linear(hypernet_embed, self.embed_dim))
         elif getattr(args, "hypernet_layers", 1) > 2:
             raise Exception("Sorry >2 hypernet layers is not implemented!")
         else:
@@ -117,6 +141,12 @@ class SubMixer(nn.Module):
 
     def __repr__(self):
         return f"Submixer for Agent {self.agent_index} reporting for duty"
+
+    def get_input_indexes(self, submixer_idx):
+        if submixer_idx != self.agent_index:
+            raise Exception("Can't return the input indexes for a different Submixer! No shared parameters")
+
+        return self.agent_nbrhood
 
     def forward(self, agent_qs, states):
         bs = agent_qs.size(0)
@@ -138,3 +168,23 @@ class SubMixer(nn.Module):
         # Reshape and return
         q_tot = y.view(bs, -1, 1)
         return q_tot
+
+
+class SharedSubMixer(SubMixer):
+    def __init__(self, args, nbrhds, shared_idx_example):
+        # call super using default args, just create a submixer for the first one
+        SubMixer.__init__(
+            self,
+            agent_index=shared_idx_example,
+            agent_nbrhood=nbrhds[shared_idx_example],
+            args=args
+        )
+
+        self.args = args
+        self.nbrhds = nbrhds
+
+    def get_input_indexes(self, submixer_idx):
+        if submixer_idx is None:
+            raise Exception("Working with shared parameters, need to specify the submixer_idx")
+
+        return self.nbrhds[submixer_idx]

@@ -121,7 +121,11 @@ class SingleCart(object):
         self.state = (x, x_dot, theta, theta_dot)
 
     def reset(self):
-        self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
+        x = self.np_random.uniform(low=-self.params["coupled"]["range"], high=self.params["coupled"]["range"], size=(1,))
+        self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(3,))
+
+        # concatenate
+        self.state = np.concatenate((x, self.state))
         self.state[0] += self.offset
 
     def get_relative_state(self):

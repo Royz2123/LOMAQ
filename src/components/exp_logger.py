@@ -37,7 +37,8 @@ class ExperimentLogger:
             try:
                 # Set up experiment name if not created yet
                 if exp_name is None:
-                    self.exp_name = f"Experiment #{len(os.listdir(self.env_path)) + experiments_tried}"
+                    exp_num_str = f"{len(os.listdir(self.env_path)) + experiments_tried}".zfill(3)
+                    self.exp_name = f"Experiment #{exp_num_str}"
 
                 self.exp_path = f"{self.env_path}{self.exp_name}/"
                 os.mkdir(self.exp_path)

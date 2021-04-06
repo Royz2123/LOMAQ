@@ -1,0 +1,23 @@
+env: multi_cart
+env_args:
+  animation_speed: 0
+  cartdist: 4
+  coupled:
+    mode: true
+    range: 1.5
+    spring_k: 1.5
+  episode_limit: 500
+  num_cartpoles: 7
+  obs_radius: 0
+  rules:
+    edge_springs: true
+    wait_for_all: true
+  seed: null
+  test_physics: false
+learner_log_interval: 500
+log_interval: 20000
+runner_log_interval: 500
+t_max: 500000
+test_greedy: true
+test_interval: 20000
+test_nepisode: 10
