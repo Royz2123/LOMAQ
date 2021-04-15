@@ -21,10 +21,6 @@ class QLearner:
         # Observes rewards locally?
         self.local_observer = False
 
-        # IQL observes each reward seperately
-        if args.name == "iql":
-            self.local_observer = True
-
         self.mixer = None
         if args.mixer is not None:
             if args.mixer == "vdn":
@@ -54,6 +50,47 @@ class QLearner:
         # log #parameters
         self.args.exp_logger.runtime_data["total parameters"][args.name] = num_params.tolist()
         self.args.exp_logger.log_runtime_data()
+
+    # Normal L2 loss, take mean over actual data, global observation!
+    def compute_global_loss(self, rewards, terminated, mask, target_max_qvals, chosen_action_qvals):
+        # Calculate 1-step Q-Learning targets
+        targets = rewards + self.args.gamma * (1 - terminated) * target_max_qvals
+
+        # Td-error
+        td_error = (chosen_action_qvals - targets.detach())
+
+        # 0-out the targets that came from padded data
+        mask = mask.expand_as(td_error)
+        masked_td_error = td_error * mask
+
+        # Normal L2 loss, take mean over actual data
+        return (masked_td_error ** 2).sum() / mask.sum()
+
+    # My L2 loss, local observation!
+    def compute_local_loss(self, rewards, terminated, mask, target_max_qvals, chosen_action_qvals):
+        # This is the main contribution of my work - localized losses for scalable problems
+        # An exact explanation of the loss function is available under documentation, Status Update - Week 5
+
+        # Our goal is to be able to compute LNIT (L_N^I(theta))
+
+        # Now we assume that target_max_qvals and chosen_action_qvals is the individual Q function Q_i,
+        # where the index of each Q is the agent that that reward belongs to. In that case, we need to sum
+        # Q_i's and rewards by looking at that neighborhood in the graph
+
+
+
+        # Calculate 1-step Q-Learning targets
+        targets = rewards + self.args.gamma * (1 - terminated) * target_max_qvals
+
+        # Td-error
+        td_error = (chosen_action_qvals - targets.detach())
+
+        # 0-out the targets that came from padded data
+        mask = mask.expand_as(td_error)
+        masked_td_error = td_error * mask
+
+        # Normal L2 loss, take mean over actual data
+        return (masked_td_error ** 2).sum() / mask.sum()
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
         # Get the relevant quantities
@@ -116,18 +153,12 @@ class QLearner:
         # print(f"Rewards: {rewards.shape}")
         # print(f"Mask: {mask.shape}")
 
-        # Calculate 1-step Q-Learning targets
-        targets = rewards + self.args.gamma * (1 - terminated) * target_max_qvals
+        # Compute Loss
+        loss_func = QLearner.compute_global_loss
+        if self.local_observer:
+            loss_func = QLearner.compute_local_loss
 
-        # Td-error
-        td_error = (chosen_action_qvals - targets.detach())
-
-        # 0-out the targets that came from padded data
-        mask = mask.expand_as(td_error)
-        masked_td_error = td_error * mask
-
-        # Normal L2 loss, take mean over actual data
-        loss = (masked_td_error ** 2).sum() / mask.sum()
+        loss = loss_func(self, rewards, terminated, mask, target_max_qvals, chosen_action_qvals)
 
         # Optimise
         self.optimiser.zero_grad()
@@ -143,9 +174,11 @@ class QLearner:
             self.logger.log_stat("loss", loss.item(), t_env)
             self.logger.log_stat("grad_norm", grad_norm, t_env)
             mask_elems = mask.sum().item()
-            self.logger.log_stat("td_error_abs", (masked_td_error.abs().sum().item()/mask_elems), t_env)
-            self.logger.log_stat("q_taken_mean", (chosen_action_qvals * mask).sum().item()/(mask_elems * self.args.n_agents), t_env)
-            self.logger.log_stat("target_mean", (targets * mask).sum().item()/(mask_elems * self.args.n_agents), t_env)
+            self.logger.log_stat("td_error_abs", (masked_td_error.abs().sum().item() / mask_elems), t_env)
+            self.logger.log_stat("q_taken_mean",
+                                 (chosen_action_qvals * mask).sum().item() / (mask_elems * self.args.n_agents), t_env)
+            self.logger.log_stat("target_mean", (targets * mask).sum().item() / (mask_elems * self.args.n_agents),
+                                 t_env)
             self.log_stats_t = t_env
 
             self.args.exp_logger.save_learner_data(
@@ -155,7 +188,7 @@ class QLearner:
                     "loss": loss.item(),
                     "td_error": masked_td_error.abs().sum().item() / mask_elems,
                     "grad_norm": grad_norm.clone().detach().numpy(),
-                    "q_taken_mean": (chosen_action_qvals * mask).sum().item()/(mask_elems * self.args.n_agents),
+                    "q_taken_mean": (chosen_action_qvals * mask).sum().item() / (mask_elems * self.args.n_agents),
                     "target_mean": (targets * mask).sum().item() / (mask_elems * self.args.n_agents)
                 }
             )
