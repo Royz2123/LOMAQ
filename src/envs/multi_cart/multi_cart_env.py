@@ -150,8 +150,17 @@ class MultiCartPoleEnv(MultiAgentEnv):
                     self.cartpoles[i + 1].get_absolute_state()[0]
                 )
 
+            # if cart is dead, reset it to it's current location
+            elif self.params["rules"]["terminate"] == "endless":
+                self.cartpoles[i].reset(save_x=True)
+
         # get rewards for this run
         rewards = [not cartpole.is_done() for cartpole in self.cartpoles]
+
+        # for endless mode, punish cartpoles more harshly so the average reward is more affected
+        if self.params["rules"]["terminate"] == "endless":
+            rewards = [r if r else -20 for r in rewards]
+
         self.last_reward = sum(rewards)
 
         # update status of all cartpoles
@@ -159,12 +168,16 @@ class MultiCartPoleEnv(MultiAgentEnv):
 
         # check if should terminate simultation
         times_up = self.episode_steps >= self.params["episode_limit"]
-        if self.params["rules"]["wait_for_all"]:
+        if self.params["rules"]["terminate"] == "all":
             any_alive = any(self.cart_alive)
             done = times_up or (not any_alive)
-        else:
+        elif self.params["rules"]["terminate"] == "any":
             all_alive = all(self.cart_alive)
             done = times_up or (not all_alive)
+        elif self.params["rules"]["terminate"] == "endless":
+            done = times_up
+        else:
+            raise Exception("Termination condition not recognized, muse be one of [any, all, endless]")
 
         if self.steps_beyond_done is None:
             # One of the poles has fallen

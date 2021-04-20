@@ -77,7 +77,6 @@ class LocalQMixer(nn.Module):
 
             relevant_qs = agent_qs[:, :, sub_mixer.get_input_indexes(submixer_idx=idx)]
 
-            print(relevant_qs.shape)
             # So now the updated states are
             # States shape is: [batch_size, max_ep_len, num_agents * state_size] - consider truncated
             # Agent_qs shape is: [batch_size, max_ep_len, len(sub_mixer.agent_nbrhood)]

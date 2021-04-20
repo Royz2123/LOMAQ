@@ -120,13 +120,16 @@ class SingleCart(object):
 
         self.state = (x, x_dot, theta, theta_dot)
 
-    def reset(self):
-        x = self.np_random.uniform(low=-self.params["coupled"]["range"], high=self.params["coupled"]["range"], size=(1,))
-        self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(3,))
+    def reset(self, save_x=False):
+        if save_x and self.state is not None:
+            x = np.array([self.state[0]])
+        else:
+            x = self.np_random.uniform(low=-self.params["coupled"]["range"], high=self.params["coupled"]["range"], size=(1,))
+            x[0] += self.offset
+        other_data = self.np_random.uniform(low=-0.05, high=0.05, size=(3,))
 
         # concatenate
-        self.state = np.concatenate((x, self.state))
-        self.state[0] += self.offset
+        self.state = np.concatenate((x, other_data))
 
     def get_relative_state(self):
         x, x_dot, theta, theta_dot = self.state

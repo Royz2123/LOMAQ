@@ -20,7 +20,7 @@ class QLearner:
 
         # Observes rewards locally?
         self.local_observer = False
-        self.depth_ls = [{"depth_l": self.args.l_params.start_depth_l, "weight": 1}]
+        self.depth_ls = [{"depth_l": self.args.l_params["start_depth_l"], "weight": 1}]
 
         self.mixer = None
         if args.mixer is not None:
@@ -84,14 +84,25 @@ class QLearner:
         for depth_info in self.depth_ls:
             indices = self.args.graph_obj.get_nbrhoods(depth=depth_info["depth_l"])
 
-            for agent_index in self.args.n_agents:
+            for agent_index in range(self.args.n_agents):
                 # Computing the individual LNilT (L_N^l_i(theta))
-                nbrhood = indices[agent_index]
-                local_rewards = rewards[nbrhood]
-                local_terminated = terminated[nbrhood]
+                # print(depth_info, agent_index)
 
-                chosen_action_local_qvals = chosen_action_qvals[nbrhood]
-                target_max_local_qvals = target_max_qvals[nbrhood]
+                nbrhood = indices[agent_index]
+                local_rewards = rewards[:, :, nbrhood]
+                local_rewards = th.sum(local_rewards, dim=-1, keepdims=True)[:, :-1]
+                local_terminated = terminated.expand_as(local_rewards)
+
+                chosen_action_local_qvals = chosen_action_qvals[:, :, nbrhood]
+                target_max_local_qvals = target_max_qvals[:, :, nbrhood]
+                chosen_action_local_qvals = th.sum(chosen_action_local_qvals, dim=-1, keepdims=True)
+                target_max_local_qvals = th.sum(target_max_local_qvals, dim=-1, keepdims=True)
+
+                print("Agent: ", agent_index, ", L depth: ", nbrhood, ",  Neighbors: ", nbrhood)
+                print("Rewards Shape: ", rewards.shape, local_rewards.shape)
+                print("Terminated Shape: ", terminated.shape, local_terminated.shape)
+                print("Chosen Action Q Shape: ", chosen_action_qvals.shape, chosen_action_local_qvals.shape)
+                print("Target Max Q Shape: ", target_max_qvals.shape, target_max_local_qvals.shape)
 
                 # Calculate 1-step Q-Learning targets
                 targets = local_rewards + self.args.gamma * (1 - local_terminated) * target_max_local_qvals
@@ -105,26 +116,25 @@ class QLearner:
 
                 # Normal L2 loss, take mean over actual data
                 total_loss += (masked_td_error ** 2).sum() / mask.sum()
-
         return total_loss
 
     def update_l_params(self, t_env):
         params = self.args.l_params
 
         # we want to update the weights. First find in what interval update we are and where we are in it
-        interval_index = t_env // params.update_interval_t
-        interval_step = t_env % params.update_interval_t
+        interval_index = t_env // params["update_interval_t"]
+        interval_step = t_env % params["update_interval_t"]
 
         # compute current l
-        if params.growth_type == "constant":
-            current_l = params.start_depth_l
+        if params["growth_type"] == "constant":
+            current_l = params["start_depth_l"]
             next_l = current_l
-        elif params.growth_type == "linear":
-            current_l = params.start_depth_l + params.growth_jump * interval_index
-            next_l = current_l + params.growth_jump
-        elif params.growth_type == "exponent":
-            current_l = params.start_depth_l * (params.growth_jump ** interval_index)
-            next_l = current_l * params.growth_jump
+        elif params["growth_type"] == "linear":
+            current_l = params["start_depth_l"] + params["growth_jump"] * interval_index
+            next_l = current_l + params["growth_jump"]
+        elif params["growth_type"] == "exponent":
+            current_l = params["start_depth_l"] * (params["growth_jump"] ** interval_index)
+            next_l = current_l * params["growth_jump"]
         else:
             raise Exception("Error when updating l - Growth type not found")
 
@@ -133,10 +143,10 @@ class QLearner:
         next_l = min(next_l, self.args.n_agents)
 
         # update the l data based on the update type
-        if params.update_type == "hard":
+        if params["update_type"] == "hard":
             self.depth_ls = [{"depth_l": current_l, "weight": 1}]
-        elif params.update_type == "soft":
-            curr_weight = 1 - interval_step / params.update_interval_t
+        elif params["update_type"] == "soft":
+            curr_weight = 1 - interval_step / params["update_interval_t"]
             self.depth_ls = [
                 {"depth_l": current_l, "weight": curr_weight},
                 {"depth_l": next_l, "weight": 1 - curr_weight},
@@ -150,7 +160,7 @@ class QLearner:
         if not self.local_observer:
             rewards = th.sum(batch["reward"], dim=-1, keepdims=True)[:, :-1]
         else:
-            rewards = batch["reward"][:, :-1]
+            rewards = batch["reward"]
 
         actions = batch["actions"][:, :-1]
         terminated = batch["terminated"][:, :-1].float()
