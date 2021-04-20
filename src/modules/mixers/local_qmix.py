@@ -67,7 +67,6 @@ class LocalQMixer(nn.Module):
         else:
             return all_submixers[self.depth_k:-self.depth_k]
 
-
     def forward(self, agent_qs, states):
         qs = []
         for idx, sub_mixer in enumerate(self.sub_mixers):

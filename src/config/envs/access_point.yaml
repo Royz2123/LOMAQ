@@ -1,0 +1,18 @@
+env: access_point
+
+env_args:
+  episode_limit: 300
+  grid_size: 5      # grid_size X grid_size
+  params:
+    di: 2
+    pi: "unifrom"   # can be either "uniform" - random [0,1] for every access_point, or int to specify
+    qk: "unifrom"
+
+
+test_greedy: True
+test_nepisode: 10
+test_interval: 20000
+log_interval: 20000
+runner_log_interval: 500
+learner_log_interval: 500
+t_max: 400000
