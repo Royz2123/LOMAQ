@@ -56,11 +56,17 @@ class MultiAgentEnv(object):
     def get_reward_size(self):
         return (1,)
 
+    def get_graph_obj(self):
+        # By deafult, assume there is no underlying graph that models intercations:
+        return None
+
     def get_env_info(self):
         env_info = {"state_shape": self.get_state_size(),
                     "obs_shape": self.get_obs_size(),
                     "reward_shape": self.get_reward_size(),
                     "n_actions": self.get_total_actions(),
                     "n_agents": self.n_agents,
-                    "episode_limit": self.episode_limit}
+                    "episode_limit": self.episode_limit,
+                    "graph_obj": self.get_graph_obj(),
+                    }
         return env_info

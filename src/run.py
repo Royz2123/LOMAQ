@@ -78,7 +78,6 @@ def run_sequential(args, logger):
     args.env_args["learner_name"] = args.name
     args.env_args["exp_logger"] = args.exp_logger
 
-
     # Init runner so we can get env info
     runner = r_REGISTRY[args.runner](args=args, logger=logger)
 
@@ -88,6 +87,7 @@ def run_sequential(args, logger):
     args.n_agents = env_info["n_agents"]
     args.n_actions = env_info["n_actions"]
     args.state_shape = env_info["state_shape"]
+    args.graph_obj = env_info["graph_obj"]
 
     # Support Local Rewards also
     reward_shape = (1,)

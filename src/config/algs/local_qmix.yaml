@@ -25,6 +25,14 @@ hypernet_embed: 64
 # depth k of each submixer
 depth_k: 2
 
+# parameterising l
+l_params:
+  start_depth_l: 1
+  growth_jump: 2
+  growth_type: "linear"   # can be either linear, expontent or constant
+  update_type: "hard"     # can be either hard or soft
+  update_interval_t: 100000
+
 # parameter sharing for the subnet (only relevant for symmetric problems)
 parameter_sharing: True
 

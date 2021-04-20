@@ -20,6 +20,7 @@ class QLearner:
 
         # Observes rewards locally?
         self.local_observer = False
+        self.depth_ls = [{"depth_l": self.args.l_params.start_depth_l, "weight": 1}]
 
         self.mixer = None
         if args.mixer is not None:
@@ -71,26 +72,77 @@ class QLearner:
         # This is the main contribution of my work - localized losses for scalable problems
         # An exact explanation of the loss function is available under documentation, Status Update - Week 5
 
-        # Our goal is to be able to compute LNIT (L_N^I(theta))
+        # Our goal is to be able to compute LNilT (L_N^l_i(theta))
 
         # Now we assume that target_max_qvals and chosen_action_qvals is the individual Q function Q_i,
         # where the index of each Q is the agent that that reward belongs to. In that case, we need to sum
         # Q_i's and rewards by looking at that neighborhood in the graph
 
+        # for every depth LNIT
+        # first, get relevant indices from the graph
+        total_loss = 0
+        for depth_info in self.depth_ls:
+            indices = self.args.graph_obj.get_nbrhoods(depth=depth_info["depth_l"])
 
+            for agent_index in self.args.n_agents:
+                # Computing the individual LNilT (L_N^l_i(theta))
+                nbrhood = indices[agent_index]
+                local_rewards = rewards[nbrhood]
+                local_terminated = terminated[nbrhood]
 
-        # Calculate 1-step Q-Learning targets
-        targets = rewards + self.args.gamma * (1 - terminated) * target_max_qvals
+                chosen_action_local_qvals = chosen_action_qvals[nbrhood]
+                target_max_local_qvals = target_max_qvals[nbrhood]
 
-        # Td-error
-        td_error = (chosen_action_qvals - targets.detach())
+                # Calculate 1-step Q-Learning targets
+                targets = local_rewards + self.args.gamma * (1 - local_terminated) * target_max_local_qvals
 
-        # 0-out the targets that came from padded data
-        mask = mask.expand_as(td_error)
-        masked_td_error = td_error * mask
+                # Td-error
+                td_error = (chosen_action_local_qvals - targets.detach())
 
-        # Normal L2 loss, take mean over actual data
-        return (masked_td_error ** 2).sum() / mask.sum()
+                # 0-out the targets that came from padded data
+                mask = mask.expand_as(td_error)
+                masked_td_error = td_error * mask
+
+                # Normal L2 loss, take mean over actual data
+                total_loss += (masked_td_error ** 2).sum() / mask.sum()
+
+        return total_loss
+
+    def update_l_params(self, t_env):
+        params = self.args.l_params
+
+        # we want to update the weights. First find in what interval update we are and where we are in it
+        interval_index = t_env // params.update_interval_t
+        interval_step = t_env % params.update_interval_t
+
+        # compute current l
+        if params.growth_type == "constant":
+            current_l = params.start_depth_l
+            next_l = current_l
+        elif params.growth_type == "linear":
+            current_l = params.start_depth_l + params.growth_jump * interval_index
+            next_l = current_l + params.growth_jump
+        elif params.growth_type == "exponent":
+            current_l = params.start_depth_l * (params.growth_jump ** interval_index)
+            next_l = current_l * params.growth_jump
+        else:
+            raise Exception("Error when updating l - Growth type not found")
+
+        # cap both current l's with the total depth
+        current_l = min(current_l, self.args.n_agents)
+        next_l = min(next_l, self.args.n_agents)
+
+        # update the l data based on the update type
+        if params.update_type == "hard":
+            self.depth_ls = [{"depth_l": current_l, "weight": 1}]
+        elif params.update_type == "soft":
+            curr_weight = 1 - interval_step / params.update_interval_t
+            self.depth_ls = [
+                {"depth_l": current_l, "weight": curr_weight},
+                {"depth_l": next_l, "weight": 1 - curr_weight},
+            ]
+        else:
+            raise Exception("Error when updating l - Update type not found")
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
         # Get the relevant quantities
@@ -154,10 +206,10 @@ class QLearner:
         # print(f"Mask: {mask.shape}")
 
         # Compute Loss
-        loss_func = QLearner.compute_global_loss
         if self.local_observer:
             loss_func = QLearner.compute_local_loss
-
+        else:
+            loss_func = QLearner.compute_global_loss
         loss = loss_func(self, rewards, terminated, mask, target_max_qvals, chosen_action_qvals)
 
         # Optimise
@@ -170,15 +222,18 @@ class QLearner:
             self._update_targets()
             self.last_target_update_episode = episode_num
 
+        if self.local_observer:
+            self.update_l_params(t_env)
+
         if t_env - self.log_stats_t >= self.args.learner_log_interval:
             self.logger.log_stat("loss", loss.item(), t_env)
             self.logger.log_stat("grad_norm", grad_norm, t_env)
             mask_elems = mask.sum().item()
-            self.logger.log_stat("td_error_abs", (masked_td_error.abs().sum().item() / mask_elems), t_env)
+            # self.logger.log_stat("td_error_abs", (masked_td_error.abs().sum().item() / mask_elems), t_env)
             self.logger.log_stat("q_taken_mean",
                                  (chosen_action_qvals * mask).sum().item() / (mask_elems * self.args.n_agents), t_env)
-            self.logger.log_stat("target_mean", (targets * mask).sum().item() / (mask_elems * self.args.n_agents),
-                                 t_env)
+            # self.logger.log_stat("target_mean", (targets * mask).sum().item() / (mask_elems * self.args.n_agents),
+            #                      t_env)
             self.log_stats_t = t_env
 
             self.args.exp_logger.save_learner_data(
@@ -186,10 +241,10 @@ class QLearner:
                 learner_data={
                     "t_env": t_env,
                     "loss": loss.item(),
-                    "td_error": masked_td_error.abs().sum().item() / mask_elems,
+                    # "td_error": masked_td_error.abs().sum().item() / mask_elems,
                     "grad_norm": grad_norm.clone().detach().numpy(),
                     "q_taken_mean": (chosen_action_qvals * mask).sum().item() / (mask_elems * self.args.n_agents),
-                    "target_mean": (targets * mask).sum().item() / (mask_elems * self.args.n_agents)
+                    # "target_mean": (targets * mask).sum().item() / (mask_elems * self.args.n_agents)
                 }
             )
 

@@ -16,6 +16,7 @@ import pyglet
 
 # Base class import
 from envs.multiagentenv import MultiAgentEnv
+from components.locality_graph import DependencyGraph
 
 # Multicartpole data
 import envs.multi_cart.constants as constants
@@ -122,6 +123,16 @@ class MultiCartPoleEnv(MultiAgentEnv):
         self.cart_alive = [True for _ in range(self.params["num_cartpoles"])]
         self.last_reward = -1
         self.reward_label = None
+
+        # In the MultiCart enviroment we can model the interactions as a single line graph. This is the default
+        # architecture
+        self.graph_obj = self.graph_obj = DependencyGraph(
+            graph=None,
+            num_agents=self.params["num_cartpoles"],
+        )
+
+    def get_graph_obj(self):
+        return self.graph_obj
 
     def step(self, action):
         self.episode_steps += 1
@@ -314,7 +325,7 @@ class MultiCartPoleEnv(MultiAgentEnv):
         # render base springs
         low_idx = 0 if self.params["rules"]["edge_springs"] else 1
         high_idx = self.params["num_cartpoles"] if self.params["rules"]["edge_springs"] else (
-                    self.params["num_cartpoles"] - 1)
+                self.params["num_cartpoles"] - 1)
 
         # render springs and background
         if self.params["coupled"]["mode"]:
