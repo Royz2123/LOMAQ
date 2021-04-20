@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+
 # So what does the LocalQMixer look like coceptually?
 # We have a mixing layer that redirects inputs based on the graph and k
 # and then we have an array of submixers
@@ -33,21 +34,17 @@ class LocalQMixer(nn.Module):
         # doing this manually, I hope this will work now.
 
         # parameter sharing
-        all_agents = list(range(args.n_agents))
-        non_sharing_agents = all_agents
+        sharing_submixers = self.get_sharing_submixers()
+
+        # We assume that every agent has the same subgraph apart from the non-sharing submixers
         shared_module = None
-
-        if self.args.parameter_sharing:
-            # for now assume that the edges need different sharing parameters
-            non_sharing_agents = all_agents[:self.depth_k] + all_agents[-self.depth_k:]
-
-            # We assume that every agent has the same subgraph apart from the non-sharing agents
+        if self.args.parameter_sharing and len(sharing_submixers) > 0:
             shared_module = SharedSubMixer(args=args, nbrhds=self.nbrhds, shared_idx_example=self.depth_k)
 
         # create the module_list base on who wants to share and who doesn't
         module_list = []
         for agent_index in range(self.n_agents):
-            if agent_index in non_sharing_agents:
+            if shared_module is None or (agent_index not in sharing_submixers):
                 module_list.append(SubMixer(
                     agent_index=agent_index,
                     agent_nbrhood=self.nbrhds[agent_index],
@@ -57,6 +54,19 @@ class LocalQMixer(nn.Module):
                 module_list.append(shared_module)
 
         self.sub_mixers = nn.ModuleList(module_list)
+
+    def get_sharing_submixers(self):
+        # Here we want to return all the indices of submixers that can share parameters
+        all_submixers = list(range(self.args.n_agents))
+        num_non_sharing = 2 * self.depth_k
+
+        # No point in sharing parameters if we only have "edges" submixers
+        # We should have at least 2 sharing submixers in order for this to be useful
+        if len(all_submixers) <= (num_non_sharing + 1):
+            return []
+        else:
+            return all_submixers[self.depth_k:-self.depth_k]
+
 
     def forward(self, agent_qs, states):
         qs = []
@@ -133,7 +143,7 @@ class SubMixer(nn.Module):
                                nn.Linear(self.embed_dim, 1))
 
     def __repr__(self):
-        return f"Submixer for Agent {self.agent_index} reporting for duty"
+        return f"\nSubmixer for Agent {self.agent_index} reporting for duty\nNeighborhood: {self.agent_nbrhood}\n"
 
     def get_input_indexes(self, submixer_idx):
         if submixer_idx != self.agent_index:
@@ -175,6 +185,9 @@ class SharedSubMixer(SubMixer):
 
         self.args = args
         self.nbrhds = nbrhds
+
+    def __repr__(self):
+        return f"\nShared Submixer reporting for duty\nMultiple neighborhoods relevant\n"
 
     def get_input_indexes(self, submixer_idx):
         if submixer_idx is None:

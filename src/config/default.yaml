@@ -48,3 +48,12 @@ label: "default_label"
 
 # update the target network every {} episodes
 target_update_interval: 50
+
+# default l params - if not a local oserver this will be ignored
+# parameterising l, by default the starting l should be 0 and should not change
+l_params:
+  start_depth_l: 0
+  growth_jump: 2
+  growth_type: "constant"   # can be either linear, expontent or constant
+  update_type: "hard"     # can be either hard or soft
+  update_interval_t: 100000

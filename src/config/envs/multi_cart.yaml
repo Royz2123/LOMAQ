@@ -2,18 +2,18 @@ env: multi_cart
 
 env_args:
   cartdist: 4
-  num_cartpoles: 6
+  num_cartpoles: 15
   obs_radius: 0
   seed: null
   test_physics: False
-  episode_limit: 200
-  animation_speed: 0.1
+  episode_limit: 300
+  animation_speed: 0
   coupled:
     mode: True
     spring_k: 2.0
     range: 2.0
   rules:
-    terminate: "endless"   # string, can be any, all, or endless
+    terminate: "all"   # string, can be any, all, or endless
     edge_springs: True
 
 test_greedy: True
@@ -22,4 +22,4 @@ test_interval: 20000
 log_interval: 20000
 runner_log_interval: 500
 learner_log_interval: 500
-t_max: 500000
+t_max: 400000

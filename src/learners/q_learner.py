@@ -98,11 +98,11 @@ class QLearner:
                 chosen_action_local_qvals = th.sum(chosen_action_local_qvals, dim=-1, keepdims=True)
                 target_max_local_qvals = th.sum(target_max_local_qvals, dim=-1, keepdims=True)
 
-                print("Agent: ", agent_index, ", L depth: ", nbrhood, ",  Neighbors: ", nbrhood)
-                print("Rewards Shape: ", rewards.shape, local_rewards.shape)
-                print("Terminated Shape: ", terminated.shape, local_terminated.shape)
-                print("Chosen Action Q Shape: ", chosen_action_qvals.shape, chosen_action_local_qvals.shape)
-                print("Target Max Q Shape: ", target_max_qvals.shape, target_max_local_qvals.shape)
+                # print("Agent: ", agent_index, ", L depth: ", nbrhood, ",  Neighbors: ", nbrhood)
+                # print("Rewards Shape: ", rewards.shape, local_rewards.shape)
+                # print("Terminated Shape: ", terminated.shape, local_terminated.shape)
+                # print("Chosen Action Q Shape: ", chosen_action_qvals.shape, chosen_action_local_qvals.shape)
+                # print("Target Max Q Shape: ", target_max_qvals.shape, target_max_local_qvals.shape)
 
                 # Calculate 1-step Q-Learning targets
                 targets = local_rewards + self.args.gamma * (1 - local_terminated) * target_max_local_qvals
