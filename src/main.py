@@ -14,13 +14,10 @@ import yaml
 from components.exp_logger import ExperimentLogger
 from run import run
 
-SETTINGS['CAPTURE_MODE'] = "fd"  # set to "no" if you want to see stdout/stderr in console
+SETTINGS['CAPTURE_MODE'] = "no"  # set to "no" if you want to see stdout/stderr in console
 logger = get_logger()
 
 results_path = os.path.join(dirname(dirname(abspath(__file__))), "results")
-
-
-
 
 
 def _get_config(params, arg_name, subfolder):
@@ -68,7 +65,7 @@ def config_copy(config):
         return deepcopy(config)
 
 
-if __name__ == '__main__':
+def main():
     params = deepcopy(sys.argv)
 
     # Get the defaults from default.yaml
@@ -95,6 +92,18 @@ if __name__ == '__main__':
         config_dict = default_config.copy()
         config_dict = recursive_dict_update(config_dict, env_config)
         config_dict = recursive_dict_update(config_dict, alg_config)
+
+        # Here we want to see if there are any super configs that we need to update
+        # Super configs will usually come from the multi_main.py where we change parameters in a single run
+        # print(config_dict)
+        try:
+            with open(os.path.join(os.path.dirname(__file__), "config", "global", "super_config.yaml"), "r") as f:
+                super_config = yaml.load(f)
+                config_dict = recursive_dict_update(config_dict, super_config)
+
+                # TODO: Save super_config in each experiment
+        except Exception as e:
+            print(f"Failed updating super config, might not exist which is OK {e}")
 
         exp_logger.add_learner(config_dict["name"])
 
@@ -123,3 +132,7 @@ if __name__ == '__main__':
         ex.observers.append(FileStorageObserver.create(file_obs_path))
 
         ex.run_commandline(params)
+
+
+if __name__ == '__main__':
+    main()

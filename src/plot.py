@@ -11,7 +11,7 @@ from scipy.ndimage import uniform_filter1d
 from envs import REGISTRY as env_REGISTRY
 
 sns.set(style='darkgrid', rc={'figure.figsize': (7.2, 4.45),
-                              'text.usetex': True,
+                              # 'text.usetex': True,
                               'xtick.labelsize': 16,
                               'ytick.labelsize': 16,
                               'font.size': 15,
@@ -30,7 +30,7 @@ colors = cycle(colors)
 plt.rcParams["font.family"] = "serif"
 
 DEFAULT_COLS = {
-    "learner_data": ["loss", "td_error", "grad_norm", "q_taken_mean", "target_mean"],
+    "learner_data": ["loss", "grad_norm", "q_taken_mean"],
     "env_data": ["episode_reward"]
 }
 
@@ -106,7 +106,8 @@ if __name__ == '__main__':
     # get args
     prs = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                   description="""Plot Traffic Signal Metrics""")
-    prs.add_argument('-env', type=str, required=True, help="Enviroment Name\n")
+    prs.add_argument('--env-config', type=str, required=True, help="Enviroment Name\n")
+    prs.add_argument('--config', type=str, default=None, help="Algorithm Names\n")
     prs.add_argument('-exp', type=str, default=None, help="Experiment name\n")
 
     prs.add_argument('-l', nargs='+', default=None, help="File's legends\n")
@@ -123,8 +124,8 @@ if __name__ == '__main__':
     base_path = f"./results/"
 
     # Check for valid env_name
-    env_name = args.env
-    if args.env not in env_REGISTRY.keys():
+    env_name = args.env_config
+    if env_name not in env_REGISTRY.keys():
         print("Enviroment not recognized")
         exit()
     env_path = f"{base_path}{env_name}/"
@@ -170,11 +171,11 @@ if __name__ == '__main__':
                                                           color=next(colors),
                                                           ma=50)
 
-                        label_fig(
-                            [],
-                            args.xaxis,
-                            col_name,
-                        )
+                        # label_fig(
+                        #     [],
+                        #     args.xaxis,
+                        #     col_name,
+                        # )
                         key = f"{log_type_name}_{col_name}"
                         plt.savefig(f"{plots_path}{key}_output.pdf", bbox_inches="tight")
                         plt.clf()
