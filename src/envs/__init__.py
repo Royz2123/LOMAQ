@@ -1,5 +1,6 @@
 from functools import partial
 from envs.multi_cart.multi_cart_env import MultiCartPoleEnv
+from envs.access_point.access_point_env import AccessPointEnv
 
 # If we are using Traffic Environments
 # from envs.traffic.traffic_env import TrafficEnv
@@ -21,6 +22,7 @@ def env_fn(env, **kwargs) -> MultiAgentEnv:
 REGISTRY = {}
 
 REGISTRY["multi_cart"] = partial(env_fn, env=MultiCartPoleEnv)
+REGISTRY["access_point"] = partial(env_fn, env=AccessPointEnv)
 
 # Only use if we have starcraft installed
 # REGISTRY["sc2"] = partial(env_fn, env=StarCraft2Env)

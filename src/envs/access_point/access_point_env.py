@@ -26,12 +26,14 @@ import envs.multi_cart.single_cart as single_cart
 
 
 class AccessPointEnv(MultiAgentEnv):
-    def __init__(self, grid_size, params, episode_limit, exp_logger=None,):
+    def __init__(self, grid_size, params, episode_limit, animation_speed, seed=None, learner_name="default_learner",
+                 exp_logger=None, ):
         # Save parameters
         self.params = {
             "grid_size": grid_size,
             "params": params,
-            "episode_limit": episode_limit
+            "episode_limit": episode_limit,
+            "animation_speed": animation_speed
         }
 
         # Other important parameters for pymarl
@@ -52,16 +54,39 @@ class AccessPointEnv(MultiAgentEnv):
         # create state array
         self.state = dict()
         self.access_points = dict()
+        self.reset()
+
+        # In the AccessPointEnv enviroment we can model the interactions as a grid. This is the default
+        # architecture
+        self.graph_obj = self.graph_obj = DependencyGraph(
+            graph=self.create_nx_graph(),
+            num_agents=self.n_agents,
+        )
+
+        # define spaces
+        # every user can send to any access point in it's vicinity
+        self.action_space = spaces.MultiDiscrete([
+            (1 + len(self.state[agent_index]["access_points"]))
+            for agent_index in range(self.n_agents)
+        ])
+        self.observation_space = spaces.MultiDiscrete([
+            self.state[agent_index]["di"]
+            for agent_index in range(self.n_agents)
+        ])
+
+    def reset(self):
+        self.state = dict()
+        self.access_points = dict()
         for i in range(self.grid_size):
             for j in range(self.grid_size):
                 agent_index = self.position_to_index((i, j))
-                ap_positions = self.get_grid_neighbors_pos(agent_index, delta=0.5)
+                ap_positions = self.get_grid_neighbors_pos(agent_index, delta=0.5, cross=True)
 
                 self.state[agent_index] = {
                     "position": (i, j),
-                    "di": params["di"],
+                    "di": self.params["params"]["di"],
                     "pi": self.set_probability("pi"),
-                    "queue": [0] * params["di"],
+                    "queue": [0] * self.params["params"]["di"],
                     "access_points": ap_positions
                 }
 
@@ -71,17 +96,6 @@ class AccessPointEnv(MultiAgentEnv):
                         "qk": self.set_probability("qk"),
                         "waiting": []
                     }
-
-        # In the AccessPointEnv enviroment we can model the interactions as a grid. This is the default
-        # architecture
-        self.graph_obj = self.graph_obj = DependencyGraph(
-            graph=self.create_nx_graph(),
-            num_agents=self.params["num_cartpoles"],
-        )
-
-        # define spaces
-        self.action_space = spaces.Tuple(tuple([spaces.MultiBinary(1 + params["di"]) for _ in range(self.n_agents)]))
-        self.observation_space = spaces.Tuple(tuple([spaces.MultiBinary(params["di"]) for _ in range(self.n_agents)]))
 
     def set_probability(self, param_name):
         val = self.params["params"][param_name]
@@ -94,21 +108,20 @@ class AccessPointEnv(MultiAgentEnv):
             except:
                 raise Exception(f"Unrecognised value for parameter {param_name}, {val}")
 
-
     def position_to_index(self, position):
         return int(position[0] * self.grid_size + position[1])
 
     def index_to_position(self, index):
         return index // self.grid_size, index % self.grid_size
 
-    def get_grid_neighbors_pos(self, agent_index, delta=1.0):
+    def get_grid_neighbors_pos(self, agent_index, delta=1.0, cross=False):
         position = self.index_to_position(agent_index)
 
         possible_nbrs = [
-            (position[0] + delta, position[1]),
-            (position[0], position[1] + delta),
-            (position[0] - delta, position[1]),
-            (position[0], position[1] - delta)
+            (position[0] + delta, position[1] - cross * delta),
+            (position[0] + cross * delta, position[1] + delta),
+            (position[0] - delta, position[1] + cross * delta),
+            (position[0] - cross * delta, position[1] - delta)
         ]
         nbrs = [pos for pos in possible_nbrs if self.is_valid_position(pos)]
 
@@ -123,7 +136,7 @@ class AccessPointEnv(MultiAgentEnv):
         return all([self.is_valid_coordinate(coord) for coord in position])
 
     def is_valid_coordinate(self, coordinate):
-        return (coordinate >= 0) and (coordinate < self.grid_size)
+        return (coordinate >= 0) and (coordinate <= (self.grid_size - 1))
 
     def create_nx_graph(self):
         graph = nx.Graph()
@@ -143,9 +156,13 @@ class AccessPointEnv(MultiAgentEnv):
     def step(self, action):
         self.episode_steps += 1
 
+        action = action.detach().numpy()
+        err_msg = "%r (%s) invalid" % (action, type(action))
+        assert self.action_space.contains(action), err_msg
+
         # At each time step, user ui can choose to send the earliest packet in its queue to one of the access
         # points in its available set Yi
-        for agent_index, agent_info in self.state.enumerate():
+        for agent_index, agent_info in self.state.items():
             # "where null represents the action of not sending"
             if action[agent_index] == 0:
                 continue
@@ -158,7 +175,16 @@ class AccessPointEnv(MultiAgentEnv):
             # " At each time step, if ui’s queue is non-empty and it takes
             # action ai = yk ∈ Yi
             # , i.e. sending the packet to access point yk"
-            self.access_points[action[agent_index]]["waiting"].append(agent_index)
+
+            # action is not 0 - decrease 1 from the index and that is the index of the access_point in the neighborhood
+            chosen_action = action[agent_index]
+            # print(self.get_info())
+            # print(agent_index)
+            # print(chosen_action)
+            # print(self.action_space)
+            # print(self.state[agent_index]["access_points"])
+            chosen_ap_pos = self.state[agent_index]["access_points"][chosen_action - 1]
+            self.access_points[chosen_ap_pos]["waiting"].append(agent_index)
 
         rewards = [0] * self.n_agents
         for position, ap_info in self.access_points.items():
@@ -187,11 +213,12 @@ class AccessPointEnv(MultiAgentEnv):
             queue = self.state[agent_index]["queue"]
             queue[queue.index(1)] = 0
 
-            # clean waiting list for next iteration
-            ap_info["waiting"][0] = []
+        # clean waiting list for next iteration
+        for _, ap_info in self.access_points.items():
+            ap_info["waiting"] = []
 
         # Move up every packet by 1 in the queue
-        for agent_index, agent_info in self.state.enumerate():
+        for agent_index, agent_info in self.state.items():
             # packet arrival probability for user ui
             new_packet = 0
             if np.random.uniform(low=0, high=1, size=(1,))[0] > agent_info["pi"]:
@@ -222,135 +249,62 @@ class AccessPointEnv(MultiAgentEnv):
         # return results
         return rewards, done, {}
 
-    # def get_info(self):
-    #     return "\n".join([
-    #                          "CARTPOLES INFO\n",
-    #                      ] + [
-    #                          f"CARTPOLE {i}: {self.get_sub_states(i, 0, relative=False)}"
-    #                          for i in range(self.params["num_cartpoles"])
-    #                      ])
-    #
-    # def get_obs(self):
-    #     obs = [self.get_obs_agent(i) for i in range(self.params["num_cartpoles"])]
-    #     return np.array(obs)
-    #
-    # # Recieves all the substates from an agent_id in a certain radius. Returns the RELATIVE x by default
-    # def get_sub_states(self, agent_id, radius, pad=False, relative=True):
-    #     # relative or absolute position on x axis - doing this thanks to Adi <3
-    #     if relative:
-    #         get_state_func = single_cart.SingleCart.get_relative_state
-    #     else:
-    #         get_state_func = single_cart.SingleCart.get_absolute_state
-    #
-    #     # left obs not including the agent
-    #     left_obs = np.array([
-    #         get_state_func(cartpole) for cartpole in
-    #         self.cartpoles[max(0, agent_id - radius): agent_id]
-    #     ])
-    #     right_obs = np.array([
-    #         get_state_func(cartpole) for cartpole in
-    #         self.cartpoles[agent_id: min(self.params["num_cartpoles"], agent_id + radius + 1)]
-    #     ])
-    #
-    #     # flatten both sides
-    #     left_obs = left_obs.flatten()
-    #     right_obs = right_obs.flatten()
-    #
-    #     # If we are required to pad (the edges) then we do this to either side
-    #     # Note: that the 0's are not there by mistake! they convey the state of
-    #     # a perfect cartpole on either side (assuming relative positions). For
-    #     # either end as far the eye can see.
-    #     # (Historically this happened thanks to a happy mistake)
-    #
-    #     if pad:
-    #         # left obs need to include "radius" cartpoles
-    #         left_obs = np.pad(
-    #             left_obs,
-    #             (radius * 4 - left_obs.shape[0], 0),
-    #             "constant",
-    #             constant_values=(0, 0)
-    #         )
-    #
-    #         # right obs need to include "radius + 1" cartpoles
-    #         right_obs = np.pad(
-    #             right_obs,
-    #             (0, (radius + 1) * 4 - right_obs.shape[0]),
-    #             "constant",
-    #             constant_values=(0, 0)
-    #         )
-    #
-    #     agent_obs = np.concatenate((left_obs, right_obs))
-    #     return agent_obs.flatten()
-    #
-    # def get_obs_agent(self, agent_id):
-    #     return self.get_sub_states(agent_id, self.params["obs_radius"], pad=True)
-    #
-    # def get_state_size(self):
-    #     return self.params["num_cartpoles"] * 4
-    #
-    # def get_reward_size(self):
-    #     return self.params["num_cartpoles"]
-    #
-    # def get_obs_size(self):
-    #     return (2 * self.params["obs_radius"] + 1) * 4
-    #
-    # def get_state(self):
-    #     state = [self.get_sub_states(i, 0) for i in range(self.params["num_cartpoles"])]
-    #     return np.array(state).flatten()
-    #
-    # def get_avail_agent_actions(self, agent_id):
-    #     return np.array([1, 1])
-    #
-    # def get_avail_actions(self):
-    #     return [self.get_avail_agent_actions(i) for i in range(self.params["num_cartpoles"])]
-    #
-    # def get_total_actions(self):
-    #     return 2
-    #
-    # def reset(self):
-    #     for cartpole in self.cartpoles:
-    #         cartpole.reset()
-    #
-    #     self.episode_data = []
-    #     self.steps_beyond_done = None
-    #     self.episode_steps = 0
-    #     return self.get_state()
-    #
-    # def get_spring_by_index(self, idx):
-    #     # 0 and n represent the edge springs, all the other ones are the inner springs
-    #     if idx == 0:
-    #         start_spring_x = self.params["bottom_threshold"]
-    #         end_spring_x = self.cartpoles[0].get_absolute_state()[0]
-    #     elif idx == self.params["num_cartpoles"]:
-    #         start_spring_x = self.cartpoles[idx - 1].get_absolute_state()[0]
-    #         end_spring_x = self.params["top_threshold"]
-    #     else:
-    #         start_spring_x = self.cartpoles[idx - 1].get_absolute_state()[0]
-    #         end_spring_x = self.cartpoles[idx].get_absolute_state()[0]
-    #
-    #     # find the spring position
-    #     spring_length = end_spring_x - start_spring_x
-    #
-    #     l = (start_spring_x + abs(self.params["bottom_threshold"])) * self.params["scale"]
-    #     l += self.params["screen"]["cartwidth"] / 2
-    #
-    #     r = (end_spring_x + abs(self.params["bottom_threshold"])) * self.params["scale"]
-    #     r -= self.params["screen"]["cartwidth"] / 2
-    #
-    #     t = self.params["screen"]["carty"] + self.params["screen"]["springwidth"] / 2
-    #     b = self.params["screen"]["carty"] - self.params["screen"]["springwidth"] / 2
-    #
-    #     spring_pos = [(l, b), (l, t), (r, t), (r, b)]
-    #
-    #     # create spring color
-    #     stretch = abs(spring_length - self.params["cartdist"])
-    #     red = 0.5 + min(0.5, stretch / self.params["cartdist"])
-    #     spring_color = (red, 0.1, 0.1)
-    #
-    #     # return spring positions and color
-    #     return spring_pos, spring_color
-    #
-    # def render(self, mode='human'):
+    def get_info(self):
+        return "\n".join([
+                             "Access Points Info:\n",
+                         ] + [
+                             f"User {i}: Position - {agent_info['position']}, Queue - {agent_info['queue']}"
+                             + f", Access Points - {agent_info['access_points']}"
+                             for i, agent_info in self.state.items()
+                         ] + [
+                             f"AP: Position - {pos}, Waiting - {ap_info['waiting']}"
+                             for pos, ap_info in self.access_points.items()
+                         ])
+
+    def get_obs_agent(self, agent_id):
+        return self.state[agent_id]["queue"]
+
+    def get_obs(self):
+        obs = [self.get_obs_agent(i) for i in range(self.n_agents)]
+        return np.array(obs)
+
+    def get_state_size(self):
+        return self.n_agents * self.params["params"]["di"]
+
+    def get_reward_size(self):
+        return self.n_agents
+
+    def get_obs_size(self):
+        return self.params["params"]["di"]
+
+    def get_state(self):
+        state = [self.get_obs_agent(i) for i in range(self.n_agents)]
+        return np.array(state).flatten()
+
+    def get_avail_agent_actions(self, agent_id):
+        return np.array([1] * self.get_total_actions())
+
+    def get_avail_actions(self):
+        return [self.get_avail_agent_actions(i) for i in range(self.n_agents)]
+
+    def get_total_actions(self):
+        return self.params["params"]["di"] + 1
+
+    def render(self, mode='human'):
+        xs, ys, colors = [], [], []
+
+        for agent_index, agent_info in self.state.items():
+            xs.append(agent_info["position"][0])
+            ys.append(agent_info["position"][1])
+
+        for pos, info in self.access_points.items():
+            xs.append(pos[0])
+            ys.append(pos[1])
+
+        plt.scatter(xs, ys)
+        plt.show()
+        time.sleep(self.params["animation_speed"])
+
     #     init = False
     #     if self.viewer is None:
     #         self.viewer = rendering.Viewer(self.params["screen"]["width"], self.params["screen"]["height"])
