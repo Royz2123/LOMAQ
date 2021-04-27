@@ -3,6 +3,7 @@
 results/multi_cart
 results/sacred
 results/traffic
+results/access_point
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
