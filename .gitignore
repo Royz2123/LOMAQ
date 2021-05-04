@@ -4,6 +4,7 @@ results/multi_cart
 results/sacred
 results/traffic
 results/access_point
+venv/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
