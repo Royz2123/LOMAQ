@@ -8,5 +8,11 @@ ssh roy_zohar%river@gw.cs.huji.ac.il
 # general (phoenix)
 ssh roy_zohar%phoenix@gw.cs.huji.ac.il
 
- sbatch --mem=400m -c4 --time=2:0:0 "scripts/linux/run_multi_cart.sh"
+# Make script executable
+chmod +x scripts/linux/run_multi_cart.sh
 
+# Run script interactively
+srun --mem=400m -c4 --time=2:0:0 "scripts/linux/run_multi_cart.sh"
+
+# Run script regularly
+sbatch --mem=400m -c4 --time=2:0:0 "scripts/linux/run_multi_cart.sh"
