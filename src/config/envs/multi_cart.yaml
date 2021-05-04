@@ -2,7 +2,7 @@ env: multi_cart
 
 env_args:
   cartdist: 4
-  num_cartpoles: 1
+  num_cartpoles: 3
   obs_radius: 0
   seed: null
   test_physics: False
