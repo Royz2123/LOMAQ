@@ -10,12 +10,17 @@ from types import SimpleNamespace as SN
 from utils.logging import Logger
 from utils.timehelper import time_left, time_str
 from os.path import dirname, abspath
+from torch.optim import RMSprop
+from torch.optim import Adam
 
 from learners import REGISTRY as le_REGISTRY
 from runners import REGISTRY as r_REGISTRY
 from controllers import REGISTRY as mac_REGISTRY
 from components.episode_buffer import ReplayBuffer
 from components.transforms import OneHot
+
+import reward_decomposition.decompose as decompose
+from reward_decomposition.decomposer import RewardDecomposer
 
 
 def run(_run, _config, _log):
@@ -119,6 +124,16 @@ def run_sequential(args, logger):
     # Setup multiagent controller here
     mac = mac_REGISTRY[args.mac](buffer.scheme, groups, args)
 
+    # Setup Reward decomposition
+    if not hasattr(args, "decompose_reward"):
+        args.decompose_reward = False
+    if not hasattr(args, "reward_parameter_sharing"):
+        args.reward_parameter_sharing = True
+    args.reward_decomposer = RewardDecomposer(buffer.scheme, args) if args.decompose_reward else None
+    args.reward_optimiser = RMSprop(params=args.reward_decomposer.parameters(), lr=0.005, alpha=args.optim_alpha,
+                                    eps=args.optim_eps)
+    # args.reward_optimiser = Adam(params=args.reward_decomposer.parameters(), lr=0.0005)
+
     # Give runner the scheme
     runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
 
@@ -186,6 +201,10 @@ def run_sequential(args, logger):
 
             if episode_sample.device != args.device:
                 episode_sample.to(args.device)
+
+            # First train the reward decomposer if necessary
+            if args.decompose_reward:
+                decompose.train_decomposer(args.reward_decomposer, episode_sample, args.reward_optimiser)
 
             # logger.console_logger.info("Starting Training")
             learner.train(episode_sample, runner.t_env, episode)

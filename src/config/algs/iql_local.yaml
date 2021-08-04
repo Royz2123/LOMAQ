@@ -1,0 +1,33 @@
+# --- QMIX specific parameters ---
+# By default, IQL is global. However, since we want to check how well our algorithm compares to IQL, we can
+# also check how IQL learns per individual rewards
+
+# use epsilon greedy action selector
+action_selector: "epsilon_greedy"
+epsilon_start: 1.0
+epsilon_finish: 0.05
+epsilon_anneal_time: 50000
+
+runner: "episode"
+
+# Local Parameters
+local_observer: True
+l_params:
+  start_depth_l: 0
+  growth_jump: 2
+  growth_type: "constant"   # can be either linear, expontent or constant
+  update_type: "hard"     # can be either hard or soft
+  update_interval_t: 100000
+
+buffer_size: 5000
+
+# update the target network every {} episodes
+target_update_interval: 50 # was 200
+
+# use the Q_Learner to train
+agent_output_type: "q"
+learner: "q_learner"
+double_q: True
+mixer: # Mixer becomes None
+
+name: "iql_local"

@@ -23,15 +23,21 @@ hypernet_layers: 2
 hypernet_embed: 64
 
 # depth k of each submixer
-depth_k: 2
+depth_k: 1
 
-# parameterising l, by default the starting l should be 0 and should not change
+# Local Parameters
+# by default the starting l should be 0 and should not change
+local_observer: True
 l_params:
   start_depth_l: 0
   growth_jump: 2
   growth_type: "constant"   # can be either linear, expontent or constant
   update_type: "hard"     # can be either hard or soft
   update_interval_t: 100000
+
+# Reward decomposition variables
+decompose_reward: True
+reward_parameter_sharing: True
 
 # parameter sharing for the subnet (only relevant for symmetric problems)
 parameter_sharing: True

@@ -8,6 +8,9 @@ from modules.mixers.local_qmix import LocalQMixer
 from modules.mixers.vdn import VDNMixer
 from modules.mixers.qmix import QMixer
 
+from reward_decomposition.decomposer import RewardDecomposer
+import reward_decomposition.decompose as decompose
+
 
 class QLearner:
     def __init__(self, mac, scheme, logger, args):
@@ -19,8 +22,12 @@ class QLearner:
         self.last_target_update_episode = 0
 
         # Observes rewards locally?
-        self.local_observer = False
-        self.depth_ls = [{"depth_l": self.args.l_params["start_depth_l"], "weight": 1}]
+        self.args.local_observer = getattr(self.args, "local_observer", False)
+
+        if hasattr(self.args, "l_params"):
+            self.depth_ls = [{"depth_l": self.args.l_params["start_depth_l"], "weight": 1}]
+        else:
+            self.depth_ls = [{"depth_l": 0, "weight": 1}]
 
         self.mixer = None
         if args.mixer is not None:
@@ -30,7 +37,6 @@ class QLearner:
                 self.mixer = QMixer(args)
             elif args.mixer == "local_qmix":
                 self.mixer = LocalQMixer(args=args)
-                self.local_observer = True
             else:
                 raise ValueError("Mixer {} not recognised.".format(args.mixer))
             self.params += list(self.mixer.parameters())
@@ -84,13 +90,13 @@ class QLearner:
         for depth_info in self.depth_ls:
             indices = self.args.graph_obj.get_nbrhoods(depth=depth_info["depth_l"])
 
-            for agent_index in range(self.args.n_agents):
+            for reward_index in range(self.args.n_agents):
                 # Computing the individual LNilT (L_N^l_i(theta))
                 # print(depth_info, agent_index)
 
-                nbrhood = indices[agent_index]
+                nbrhood = indices[reward_index]
                 local_rewards = rewards[:, :, nbrhood]
-                local_rewards = th.sum(local_rewards, dim=-1, keepdims=True)[:, :-1]
+                local_rewards = th.sum(local_rewards, dim=-1, keepdims=True)
                 local_terminated = terminated.expand_as(local_rewards)
 
                 chosen_action_local_qvals = chosen_action_qvals[:, :, nbrhood]
@@ -119,6 +125,10 @@ class QLearner:
         return total_loss
 
     def update_l_params(self, t_env):
+        # Maybe l requires no change becoause attribute doesnt exist
+        if not hasattr(self.args, "l_params"):
+            return
+
         params = self.args.l_params
 
         # we want to update the weights. First find in what interval update we are and where we are in it
@@ -154,19 +164,41 @@ class QLearner:
         else:
             raise Exception("Error when updating l - Update type not found")
 
-    def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
-        # Get the relevant quantities
+    def build_rewards(self, batch):
+        # Lets assume that the env gives us the rewards in local form
         # Sum up local rewards in last dimension (shouldn't affect other envs but worry about that later)
-        if not self.local_observer:
-            rewards = th.sum(batch["reward"], dim=-1, keepdims=True)[:, :-1]
-        else:
-            rewards = batch["reward"]
+        global_rewards = th.sum(batch["reward"], dim=-1, keepdims=True)[:, :-1]
+        local_rewards = batch["reward"][:, :-1]
 
+        # try decomposing global reward if necessary, and disregard the local rewards from the enivroment!
+        # This is exactly where we assume the local rewards are unobservable directly / not computed by the env,
+        # and where we compute them ourselves. We assume the rewards are valid (status=True) unless the decompose
+        # function fails
+        status = True
+        if self.args.decompose_reward:
+            # TODO: organize local rewards so that they are learnable like before
+            status, local_rewards = decompose.decompose(self.args.reward_decomposer, batch)
+
+        if self.args.local_observer:
+            return status, local_rewards
+        return status, global_rewards
+
+    def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
         actions = batch["actions"][:, :-1]
         terminated = batch["terminated"][:, :-1].float()
         mask = batch["filled"][:, :-1].float()
         mask[:, 1:] = mask[:, 1:] * (1 - terminated[:, :-1])
         avail_actions = batch["avail_actions"]
+
+        # Build the rewards based on the scheme (local/global, decompose or not ...)
+        status, rewards = self.build_rewards(batch)
+
+        # Check if reward decomposition has failed
+        if not status:
+            print("Decomposition failed for current batch, disregarding...")
+            return
+        else:
+            print("Successfully decomposed the reward function, training Q functions")
 
         # Calculate estimated Q-Values
         mac_out = []
@@ -216,7 +248,7 @@ class QLearner:
         # print(f"Mask: {mask.shape}")
 
         # Compute Loss
-        if self.local_observer:
+        if self.args.local_observer:
             loss_func = QLearner.compute_local_loss
         else:
             loss_func = QLearner.compute_global_loss
@@ -232,7 +264,7 @@ class QLearner:
             self._update_targets()
             self.last_target_update_episode = episode_num
 
-        if self.local_observer:
+        if self.args.local_observer:
             self.update_l_params(t_env)
 
         if t_env - self.log_stats_t >= self.args.learner_log_interval:
