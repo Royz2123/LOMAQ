@@ -96,7 +96,7 @@ class QLearner:
 
                 nbrhood = indices[reward_index]
                 local_rewards = rewards[:, :, nbrhood]
-                local_rewards = th.sum(local_rewards, dim=-1, keepdims=True)
+                local_rewards = th.sum(local_rewards, dim=-1).reshape(local_rewards.shape[0], local_rewards.shape[1], 1)
                 local_terminated = terminated.expand_as(local_rewards)
 
                 chosen_action_local_qvals = chosen_action_qvals[:, :, nbrhood]
@@ -170,18 +170,20 @@ class QLearner:
         global_rewards = th.sum(batch["reward"], dim=-1, keepdims=True)[:, :-1]
         local_rewards = batch["reward"][:, :-1]
 
+        # We assume the rewards are valid (status=True) unless the decompose
+        # function fails, and that we should use all of them (reward mask)
+        reward_mask = None
+        status = True
+
         # try decomposing global reward if necessary, and disregard the local rewards from the enivroment!
         # This is exactly where we assume the local rewards are unobservable directly / not computed by the env,
-        # and where we compute them ourselves. We assume the rewards are valid (status=True) unless the decompose
-        # function fails
-        status = True
+        # and where we compute them ourselves.
         if self.args.decompose_reward:
-            # TODO: organize local rewards so that they are learnable like before
-            status, local_rewards = decompose.decompose(self.args.reward_decomposer, batch)
+            status, reward_mask, local_rewards = decompose.decompose(self.args.reward_decomposer, batch)
 
         if self.args.local_observer:
-            return status, local_rewards
-        return status, global_rewards
+            return status, reward_mask, local_rewards
+        return status, reward_mask, global_rewards
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
         actions = batch["actions"][:, :-1]
@@ -191,14 +193,17 @@ class QLearner:
         avail_actions = batch["avail_actions"]
 
         # Build the rewards based on the scheme (local/global, decompose or not ...)
-        status, rewards = self.build_rewards(batch)
+        status, reward_mask, rewards = self.build_rewards(batch)
 
         # Check if reward decomposition has failed
         if not status:
-            print("Decomposition failed for current batch, disregarding...")
+            # print("Decomposition failed for current batch, disregarding...")
             return
-        else:
-            print("Successfully decomposed the reward function, training Q functions")
+        # print("Successfully decomposed the reward function, training Q functions")
+
+        # if given a reward mask, use in order to not use on all data
+        if reward_mask is not None:
+            mask = th.logical_and(mask, reward_mask)
 
         # Calculate estimated Q-Values
         mac_out = []

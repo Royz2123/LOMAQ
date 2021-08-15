@@ -64,6 +64,8 @@ class EpisodeRunner:
                 "obs": [self.env.get_obs()]
             }
 
+
+
             try:
                 self.batch.update(pre_transition_data, ts=self.t)
             except Exception as e:
@@ -72,7 +74,7 @@ class EpisodeRunner:
                 print("\nDATA:\n")
                 print(pre_transition_data)
                 print("\n\n")
-                exit()
+                raise e
 
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch of size 1

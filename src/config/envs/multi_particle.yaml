@@ -1,0 +1,59 @@
+env: multi_particle
+
+env_args:
+  animation_speed: 0
+  episode_limit: 50
+  num_agents: 4
+  num_landmarks: 4
+  rules:
+    landmark_radius: 0.1
+    collisions_reward: True
+    binary_reward: True
+    bonus_coeff: 0
+    graph_type: "auto"            # can be either full or empty
+
+    # observation params - can either be "none", "closest", "local", "all"
+    obs:
+      landmarks: "local"
+      agents: "local"
+
+      # In the local landmarks case, we will give the k closest landmarks. By default, k will be the max_deg of the
+      # graph if None, otherwise the number specified.
+      landmark_k: null
+
+    # bounding params
+    bounding:
+      is_bound: True
+      bound_type: "square"
+      bound_dist: 1.0
+
+    # overrides num_agents and num_landmarks with a grid of agents
+    grid:
+      use_grid: True
+
+      # num of agents in every direction
+      num_x_agents: 3
+      num_y_agents: 1
+
+      # distances between the gridded agents
+      grid_dist_x: 1.05
+      grid_dist_y: 2.10
+
+      # how much shold the odd cols of agents be offsetted in the y direction
+      grid_offset: 0.0
+
+      # spawn radius for both the agents and the landmarks
+      agent_spawn_radius: 0.4
+      landmark_spawn_radius: 0.4
+
+      # Where should each landmark spawn relative to each agent?
+      landmark_spawn_offset_x: 0.5
+      landmark_spawn_offset_y: 0
+
+test_greedy: True
+test_nepisode: 10
+test_interval: 20000
+log_interval: 20000
+runner_log_interval: 500
+learner_log_interval: 500
+t_max: 3000000

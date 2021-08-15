@@ -7,6 +7,9 @@ import torch as th
 import numpy as np
 
 from types import SimpleNamespace as SN
+
+from matplotlib import pyplot as plt
+
 from utils.logging import Logger
 from utils.timehelper import time_left, time_str
 from os.path import dirname, abspath
@@ -129,10 +132,19 @@ def run_sequential(args, logger):
         args.decompose_reward = False
     if not hasattr(args, "reward_parameter_sharing"):
         args.reward_parameter_sharing = True
+    if not hasattr(args, "reward_batch_size"):
+        args.reward_batch_size = 10
+    if not hasattr(args, "reward_updates_per_batch"):
+        args.reward_updates_per_batch = 10
+    if not hasattr(args, "reward_diff_threshold"):
+        args.reward_diff_threshold = 0.2
+    if not hasattr(args, "reward_acc"):
+        args.reward_acc = 0.95
+
     args.reward_decomposer = RewardDecomposer(buffer.scheme, args) if args.decompose_reward else None
-    args.reward_optimiser = RMSprop(params=args.reward_decomposer.parameters(), lr=0.005, alpha=args.optim_alpha,
-                                    eps=args.optim_eps)
-    # args.reward_optimiser = Adam(params=args.reward_decomposer.parameters(), lr=0.0005)
+    # args.reward_optimiser = RMSprop(params=args.reward_decomposer.parameters(), lr=0.0001, alpha=args.optim_alpha,
+    #                                 eps=args.optim_eps) if args.decompose_reward else None
+    args.reward_optimiser = Adam(params=args.reward_decomposer.parameters(), lr=0.001) if args.decompose_reward else None
 
     # Give runner the scheme
     runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
@@ -192,6 +204,23 @@ def run_sequential(args, logger):
         episode_batch = runner.run(test_mode=False)
         buffer.insert_episode_batch(episode_batch)
 
+        # First train the reward decomposer if necessary
+        if args.decompose_reward and buffer.can_sample(args.reward_batch_size):
+            for reward_update_idx in range(args.reward_updates_per_batch):
+                reward_sample = buffer.sample(args.reward_batch_size)
+                decompose.train_decomposer(args.reward_decomposer, reward_sample, args.reward_optimiser)
+
+                # Last batch for this round, save reward decomposition model & display results
+                if reward_update_idx == args.reward_updates_per_batch - 1:
+                    # Visualize the reward models
+                    plt.clf()
+                    decompose.visualize_batch(reward_sample)
+                    decompose.visualize_decomposer_1d(args.reward_decomposer, reward_sample)
+
+                    # Save models to default directory
+                    args.reward_decomposer.save_models()
+
+        # Next Train the learner
         if buffer.can_sample(args.batch_size):
             episode_sample = buffer.sample(args.batch_size)
 
@@ -201,10 +230,6 @@ def run_sequential(args, logger):
 
             if episode_sample.device != args.device:
                 episode_sample.to(args.device)
-
-            # First train the reward decomposer if necessary
-            if args.decompose_reward:
-                decompose.train_decomposer(args.reward_decomposer, episode_sample, args.reward_optimiser)
 
             # logger.console_logger.info("Starting Training")
             learner.train(episode_sample, runner.t_env, episode)

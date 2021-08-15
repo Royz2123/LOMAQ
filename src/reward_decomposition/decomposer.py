@@ -4,12 +4,25 @@ import torch.nn.functional as F
 
 
 class RewardDecomposer:
-    def __init__(self, scheme, args):
+    DEFAULT_DIR = "src/reward_decomposition/saved_models"
+    ARCHIVE_DIR = "src/reward_decomposition/saved_models/archive"
+
+    def __init__(self, scheme, args, try_load=True):
         self.n_agents = args.n_agents
         self.args = args
 
         input_shape = self._get_input_shape(scheme)
         self.reward_networks = nn.ModuleList(self.build_reward_networks(input_shape))
+
+        # try loading pretrained reward decomposition model
+        if try_load:
+            path = self.create_path(path=RewardDecomposer.ARCHIVE_DIR)
+            print(f"Trying to load reward decomposition model from {path}")
+            try:
+                self.load_models(path=path)
+            except Exception as e:
+                print("Loading model from archive failed... training from scratch")
+                print(e)
 
     # Let the reward function observe the state and the last action
     def _get_input_shape(self, scheme):
@@ -22,11 +35,11 @@ class RewardDecomposer:
         # if self.args.obs_agent_id:
         #     input_shape += self.n_agents
 
-        input_shape = 1
+        # input_shape = 2
 
         return input_shape
 
-    def build_data(self, batch):
+    def build_data_old(self, batch):
         inputs = []
         outputs = []
         for ep_idx in range(batch.batch_size):
@@ -49,8 +62,8 @@ class RewardDecomposer:
         agent_input = list()
 
         # observe the last state
-        # agent_input.append(batch["obs"][ep_idx, t_idx, agent_idx])
-        agent_input.append(batch["obs"][ep_idx, t_idx, agent_idx][2:3])
+        agent_input.append(batch["obs"][ep_idx, t_idx, agent_idx])
+        # agent_input.append(batch["obs"][ep_idx, t_idx, agent_idx][2:4])
 
         # observe the last action
         # agent_input.append(batch["actions_onehot"][ep_idx, t_idx, agent_idx])
@@ -86,12 +99,20 @@ class RewardDecomposer:
     def cuda(self):
         self.reward_networks.cuda()
 
-    def save_models(self, path):
-        th.save(self.reward_networks.state_dict(), "{}/agent.th".format(path))
+    def create_path(self, path=None):
+        if path is None:
+            path = RewardDecomposer.DEFAULT_DIR
+        return f"{path}/reward_decomposition_{self.n_agents}_agents.th"
 
-    def load_models(self, path):
-        self.reward_networks.load_state_dict(
-            th.load("{}/agent.th".format(path), map_location=lambda storage, loc: storage))
+    def save_models(self, path=None):
+        if path is None:
+            path = self.create_path()
+        th.save(self.reward_networks.state_dict(), path)
+
+    def load_models(self, path=None):
+        if path is None:
+            path = self.create_path()
+        self.reward_networks.load_state_dict(th.load(path, map_location=lambda storage, loc: storage))
 
 
 class RewardNetwork(nn.Module):
@@ -99,7 +120,6 @@ class RewardNetwork(nn.Module):
         super(RewardNetwork, self).__init__()
         self.args = args
 
-        # Easiest to reuse rnn_hidden_dim variable
         self.fc1 = nn.Linear(input_shape, 64)
         self.fc2 = nn.Linear(64, 128)
         self.fc3 = nn.Linear(128, 64)
@@ -107,7 +127,10 @@ class RewardNetwork(nn.Module):
 
     def forward(self, inputs):
         x = F.relu(self.fc1(inputs))
-        y = F.relu(self.fc2(x))
+        y = F.leaky_relu(self.fc2(x))
         h = F.tanh(self.fc3(y))
         q = self.fc4(h)
+
+        # reward is bounded between 0 and 1
+        q = th.clamp(q, min=0, max=1)
         return q

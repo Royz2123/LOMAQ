@@ -10,7 +10,7 @@ runner: "episode"
 
 # By default, IQL is global. However, since we want to check how well our algorithm compares to IQL, we can
 # also check how IQL learns per individual rewards
-local_observer: False
+local_observer: True
 
 buffer_size: 5000
 

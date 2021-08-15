@@ -67,7 +67,7 @@ class MultiCartPoleEnv(MultiAgentEnv):
                 "masscart": 1.0,
                 "length": 0.5,
                 "force_mag": 10.0,
-                "tau": 0.02,
+                "tau": 0.02,       # resolution of the simulation (dt)
                 "kinematics_integrator": 'euler'
             },
             "coupled": coupled,
@@ -135,12 +135,30 @@ class MultiCartPoleEnv(MultiAgentEnv):
         return self.graph_obj
 
     def step(self, action):
+        # STEP 1: logistics for this stage
+
         self.episode_steps += 1
 
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
 
-        # take a step for each active cartpole
+        # STEP 2: calculate the reward of this current state - currently assume only r(s)
+        # Here we compute the reward as a function of the current state - not the new one
+
+        # get rewards for this run
+        rewards = [not cartpole.is_done() for cartpole in self.cartpoles]
+        cont_rewards = [cartpole.cont_reward() for cartpole in self.cartpoles]
+
+        # for endless mode, punish cartpoles more harshly so the average reward is more affected
+        if self.params["rules"]["terminate"] == "endless":
+            rewards = [r if r else -20 for r in rewards]
+
+        self.last_reward = sum(rewards)
+
+        # update status of all cartpoles
+        self.cart_alive = rewards
+
+        # STEP 3: take a step for each active cartpole
         for i in range(self.params["num_cartpoles"]):
             if self.cart_alive[i]:
                 self.cartpoles[i].step(
@@ -154,19 +172,7 @@ class MultiCartPoleEnv(MultiAgentEnv):
             elif self.params["rules"]["terminate"] == "endless":
                 self.cartpoles[i].reset(save_x=True)
 
-        # get rewards for this run
-        rewards = [not cartpole.is_done() for cartpole in self.cartpoles]
-
-        # for endless mode, punish cartpoles more harshly so the average reward is more affected
-        if self.params["rules"]["terminate"] == "endless":
-            rewards = [r if r else -20 for r in rewards]
-
-        self.last_reward = sum(rewards)
-
-        # update status of all cartpoles
-        self.cart_alive = [not cartpole.is_done() for cartpole in self.cartpoles]
-
-        # check if should terminate simultation
+        # STEP 4: Check if should terminate simultation
         times_up = self.episode_steps >= self.params["episode_limit"]
         if self.params["rules"]["terminate"] == "all":
             any_alive = any(self.cart_alive)
@@ -193,6 +199,7 @@ class MultiCartPoleEnv(MultiAgentEnv):
             self.steps_beyond_done += 1
 
         # return results
+        rewards = cont_rewards  # do continuous rewards for now
         return rewards, done, {}
 
     def get_info(self):

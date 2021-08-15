@@ -156,6 +156,10 @@ class SingleCart(object):
 
         return done
 
+    # define a continuous reward for easier learning
+    def cont_reward(self):
+        return max(0, 1 - abs(self.state[2]) / constants.THETA_THRESHOLD_RADIANS)
+
     def render(self, viewer, init=False, mode='human'):
         if init:
             # line background

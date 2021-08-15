@@ -17,6 +17,12 @@ class DependencyGraph:
         if self.keep_cache:
             self.cache_nbrhds()
 
+        # compute the max degree of the graph
+        self.max_deg = self.compute_graph_deg()
+
+    def compute_graph_deg(self):
+        return max(self.graph.degree, key=lambda x: x[1])[1]
+
     def cache_nbrhds(self):
         for agent_index in range(self.num_agents):
             self.cache[agent_index] = {}

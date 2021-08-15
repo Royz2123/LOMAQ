@@ -27,7 +27,7 @@ save_replay: False # Saving the replay of the model loaded from checkpoint_path
 local_results_path: "results" # Path for local results
 
 # --- RL hyperparameters ---
-gamma: 0.99
+gamma: 0.9
 batch_size: 50 # Number of episodes to train on
 buffer_size: 50 # Size of the replay buffer
 lr: 0.0005 # Learning rate for agents
