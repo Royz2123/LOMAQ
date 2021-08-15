@@ -126,7 +126,6 @@ class MultiParticleEnv(MultiAgentEnv):
     # builds either the full graph or the empty graph
     @staticmethod
     def build_simple_graph(num_agents, graph_type="empty"):
-        # TODO: check myself...
         graph = nx.Graph()
 
         # add all the agents (necessary for the empty case)

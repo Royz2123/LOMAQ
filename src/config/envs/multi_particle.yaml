@@ -43,11 +43,11 @@ env_args:
       grid_offset: 0.0
 
       # spawn radius for both the agents and the landmarks
-      agent_spawn_radius: 0.4
-      landmark_spawn_radius: 0.4
+      agent_spawn_radius: 0
+      landmark_spawn_radius: 0.9
 
       # Where should each landmark spawn relative to each agent?
-      landmark_spawn_offset_x: 0.5
+      landmark_spawn_offset_x: 0
       landmark_spawn_offset_y: 0
 
 test_greedy: True
