@@ -129,7 +129,7 @@ def main():
         logger.info("Saving to FileStorageObserver in results/sacred.")
         file_obs_path = os.path.join(results_path, "sacred")
 
-        ex.observers.append(FileStorageObserver.create(file_obs_path))
+        ex.observers.append(FileStorageObserver(file_obs_path))
 
         ex.run_commandline(params)
 

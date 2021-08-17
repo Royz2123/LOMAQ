@@ -67,7 +67,7 @@ class MultiCartPoleEnv(MultiAgentEnv):
                 "masscart": 1.0,
                 "length": 0.5,
                 "force_mag": 10.0,
-                "tau": 0.02,       # resolution of the simulation (dt)
+                "tau": 0.02,  # resolution of the simulation (dt)
                 "kinematics_integrator": 'euler'
             },
             "coupled": coupled,
@@ -126,7 +126,7 @@ class MultiCartPoleEnv(MultiAgentEnv):
 
         # In the MultiCart enviroment we can model the interactions as a single line graph. This is the default
         # architecture
-        self.graph_obj = self.graph_obj = DependencyGraph(
+        self.graph_obj = DependencyGraph(
             graph=None,
             num_agents=self.params["num_cartpoles"],
         )

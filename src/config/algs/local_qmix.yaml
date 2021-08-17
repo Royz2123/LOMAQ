@@ -36,14 +36,23 @@ l_params:
   update_interval_t: 100000
 
 # Reward decomposition variables
-decompose_reward: False
+decompose_reward: True
 reward_parameter_sharing: True
 reward_batch_size: 50
-reward_updates_per_batch: 1
-reward_diff_threshold: 0.5
-reward_acc: 0.90
+reward_updates_per_batch: 50
+reward_diff_threshold: 0.05
+assume_binary_reward: True
+reward_acc: 0.999
+
+# From the paper the maximal group size that the network will try to decompose by given (b2, l)
+# For example, beta2=1 with l=2 allows pairs within 1-hop neighborhood of eachother
+reward_beta2: 0
+reward_l: 1
+
+# If true clamps the rewards between 0 and 1 in the network output
+reward_clamp: False
 
 # parameter sharing for the subnet (only relevant for symmetric problems)
-parameter_sharing: True
+parameter_sharing: False
 
 name: "local_qmix"

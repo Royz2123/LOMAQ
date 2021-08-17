@@ -1,4 +1,6 @@
 import networkx as nx
+import itertools
+
 import matplotlib.pyplot as plt
 
 
@@ -19,6 +21,22 @@ class DependencyGraph:
 
         # compute the max degree of the graph
         self.max_deg = self.compute_graph_deg()
+
+    # Function that basically finds n_j
+    def find_reward_groups(self, l=1, beta2=1):
+        all_connected_subgraphs = []
+
+        for nb_nodes in range(1, l + 1):
+            all_connected_subgraphs.append([
+                list(selected_nodes)
+                for selected_nodes in itertools.combinations(self.graph, nb_nodes)
+                if (
+                        nx.is_connected(self.graph.subgraph(selected_nodes))
+                        and nx.diameter(self.graph.subgraph(selected_nodes)) < (2 * beta2 + 1)
+                )
+            ])
+
+        return all_connected_subgraphs
 
     def compute_graph_deg(self):
         return max(self.graph.degree, key=lambda x: x[1])[1]

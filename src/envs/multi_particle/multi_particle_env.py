@@ -9,9 +9,10 @@ import time
 import numpy as np
 import networkx as nx
 
-import matplotlib.pyplot as plt
-
 from gym import spaces
+
+# import matplotlib
+# matplotlib.use('Agg')
 
 # Base class import
 from envs.multiagentenv import MultiAgentEnv
@@ -82,6 +83,8 @@ class MultiParticleEnv(MultiAgentEnv):
 
         # Build the graph based on the interactions of the particles (needs world to be created)
         self.graph_obj = self.build_graph()
+        if self.params["rules"]["graph"]["show_graph"]:
+            self.graph_obj.display()
 
         # define spaces
         # action space - 4 directions + noop
@@ -101,20 +104,14 @@ class MultiParticleEnv(MultiAgentEnv):
         self.render_geoms_xform = None
         self._reset_render()
 
-
-
     def build_graph(self):
-        graph_type = self.params["rules"]["graph_type"]
+        graph_type = self.params["rules"]["graph"]["graph_type"]
         if graph_type in ["empty", "full"]:
             graph = MultiParticleEnv.build_simple_graph(self.n_agents, graph_type)
         elif graph_type == "auto":
             graph = self.build_auto_graph()
         else:
             raise Exception("Error: uknown graph type: %s" % graph_type)
-
-        # draw the graph if necessary
-        nx.draw(graph)
-        plt.show()
 
         return DependencyGraph(num_agents=self.n_agents, graph=graph)
 
@@ -197,6 +194,9 @@ class MultiParticleEnv(MultiAgentEnv):
         err_msg = "%r (%s) invalid" % (actions, type(actions))
         assert self.action_space.contains(actions), err_msg
 
+        # we now need to compute the global reward
+        rewards = self.scenario.compute_all_rewards(self.world)
+
         # set action for each agent
         for i, agent in enumerate(self.agents):
             self._set_action(actions[i], agent)
@@ -206,9 +206,6 @@ class MultiParticleEnv(MultiAgentEnv):
 
         # print(self.episode_steps, ":\t", actions, ":\t", self.get_state())
         # time.sleep(0.3)
-
-        # we now need to compute the global reward
-        rewards = self.scenario.compute_all_rewards(self.world)
 
         # check if times up, and return done
         done = self.episode_steps >= self.episode_limit

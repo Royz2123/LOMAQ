@@ -1,0 +1,19 @@
+action_selector: epsilon_greedy
+agent_output_type: q
+buffer_size: 5000
+double_q: true
+epsilon_anneal_time: 50000
+epsilon_finish: 0.05
+epsilon_start: 1.0
+l_params:
+  growth_jump: 2
+  growth_type: constant
+  start_depth_l: 0
+  update_interval_t: 100000
+  update_type: hard
+learner: q_learner
+local_observer: true
+mixer: null
+name: iql_local
+runner: episode
+target_update_interval: 50

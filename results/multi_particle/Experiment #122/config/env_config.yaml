@@ -1,0 +1,42 @@
+env: multi_particle
+env_args:
+  animation_speed: 0
+  episode_limit: 50
+  num_agents: 2
+  num_landmarks: 1
+  rules:
+    bounding:
+      bound_dist: 1.0
+      bound_type: square
+      is_bound: true
+    graph:
+      graph_type: auto
+      show_graph: false
+    grid:
+      agent_spawn_radius: 0
+      grid_dist_x: 1.05
+      grid_dist_y: 2.1
+      grid_offset: 0.0
+      landmark_spawn_offset_x: 0
+      landmark_spawn_offset_y: 0
+      landmark_spawn_radius: 0.9
+      num_x_agents: 2
+      num_y_agents: 1
+      use_grid: false
+    obs:
+      agents: none
+      landmark_k: null
+      landmarks: all
+    reward:
+      collisions_reward: false
+      landmark_bonus_coeff: 1.0
+      landmark_bonus_reward: binary
+      landmark_closest_reward: none
+      landmark_radius: 0.3
+learner_log_interval: 500
+log_interval: 20000
+runner_log_interval: 500
+t_max: 2000000
+test_greedy: true
+test_interval: 20000
+test_nepisode: 1

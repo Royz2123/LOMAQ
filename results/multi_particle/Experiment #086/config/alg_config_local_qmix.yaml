@@ -1,0 +1,33 @@
+action_selector: epsilon_greedy
+agent_output_type: q
+buffer_size: 5000
+decompose_reward: true
+depth_k: 1
+double_q: true
+epsilon_anneal_time: 50000
+epsilon_finish: 0.05
+epsilon_start: 1.0
+hypernet_embed: 64
+hypernet_layers: 2
+l_params:
+  growth_jump: 2
+  growth_type: constant
+  start_depth_l: 0
+  update_interval_t: 100000
+  update_type: hard
+learner: q_learner
+local_observer: true
+mixer: local_qmix
+mixing_embed_dim: 32
+name: local_qmix
+parameter_sharing: false
+reward_acc: 0.999
+reward_batch_size: 50
+reward_beta2: 0
+reward_clamp: false
+reward_diff_threshold: 0.05
+reward_l: 1
+reward_parameter_sharing: true
+reward_updates_per_batch: 100
+runner: episode
+target_update_interval: 50

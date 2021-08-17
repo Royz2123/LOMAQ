@@ -144,7 +144,8 @@ def run_sequential(args, logger):
     args.reward_decomposer = RewardDecomposer(buffer.scheme, args) if args.decompose_reward else None
     # args.reward_optimiser = RMSprop(params=args.reward_decomposer.parameters(), lr=0.0001, alpha=args.optim_alpha,
     #                                 eps=args.optim_eps) if args.decompose_reward else None
-    args.reward_optimiser = Adam(params=args.reward_decomposer.parameters(), lr=0.001) if args.decompose_reward else None
+    args.reward_optimiser = Adam(params=args.reward_decomposer.parameters(),
+                                 lr=0.001) if args.decompose_reward else None
 
     # Give runner the scheme
     runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
@@ -214,8 +215,8 @@ def run_sequential(args, logger):
                 if reward_update_idx == args.reward_updates_per_batch - 1:
                     # Visualize the reward models
                     plt.clf()
-                    decompose.visualize_batch(reward_sample)
-                    decompose.visualize_decomposer_1d(args.reward_decomposer, reward_sample)
+                    decompose.visualize_batch(reward_sample, env_name=args.env)
+                    decompose.visualize_decomposer_1d(args.reward_decomposer, reward_sample, env_name=args.env)
 
                     # Save models to default directory
                     args.reward_decomposer.save_models()
