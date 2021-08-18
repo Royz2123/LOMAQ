@@ -20,7 +20,7 @@ from components.locality_graph import DependencyGraph
 
 # from multiagent.multi_discrete import MultiDiscrete
 from envs.multi_particle.local_spread import LocalSpreadScenario
-from envs.multi_particle.multiagent_particle_envs.multiagent import rendering
+from envs.multi_particle.multiagent_particle_env.multiagent import rendering
 
 
 # We ditched the scenario scheme since we had no need for all the complexity, and our reward scheme was quite different

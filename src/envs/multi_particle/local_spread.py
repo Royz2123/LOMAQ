@@ -1,6 +1,6 @@
 import numpy as np
-from envs.multi_particle.multiagent_particle_envs.multiagent.core import World, Agent, Landmark
-from envs.multi_particle.multiagent_particle_envs.multiagent.scenario import BaseScenario
+from envs.multi_particle.multiagent_particle_env.multiagent.core import World, Agent, Landmark
+from envs.multi_particle.multiagent_particle_env.multiagent.scenario import BaseScenario
 
 
 class LocalSpreadScenario(BaseScenario):
