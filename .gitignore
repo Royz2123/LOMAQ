@@ -4,6 +4,7 @@ results/multi_cart
 results/sacred
 results/traffic
 results/access_point
+results/multi_particle
 venv/
 
 # Byte-compiled / optimized / DLL files
