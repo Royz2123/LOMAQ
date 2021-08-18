@@ -17,7 +17,7 @@ from gym import error
 try:
     import pyglet
 except ImportError as e:
-    print("Error!!!")
+    print("Cannot import pyglet...")
     # ra(suffix="HINT: you can install pyglet directly via 'pip install pyglet'. But if you really just want to install all Gym dependencies and not have to think about it, 'pip install -e .[all]' or 'pip install gym[all]' will do it.")
 
 try:
