@@ -4,6 +4,10 @@ import torch.nn.functional as F
 
 import numpy as np
 from itertools import combinations
+from itertools import product
+
+from matplotlib import pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 class RewardDecomposer:
@@ -20,6 +24,10 @@ class RewardDecomposer:
         input_shape_one_obs = self._get_input_shape(scheme)
         self.reward_groups = args.graph_obj.find_reward_groups(l=args.reward_l, beta2=args.reward_beta2)
         self.reward_networks = self.build_reward_networks(input_shape_one_obs)
+
+        self.reward_combos, self.reward_to_class_idx = self.get_all_combinations(filter_combos=True)
+
+        self.regularizing_weights = self.get_regularizing_weights()
 
         # try loading pretrained reward decomposition model
         if try_load:
@@ -42,7 +50,7 @@ class RewardDecomposer:
         # if self.args.obs_agent_id:
         #     input_shape += self.n_agents
 
-        # input_shape = 2
+        input_shape = 1
 
         return input_shape
 
@@ -79,8 +87,8 @@ class RewardDecomposer:
         agent_input = list()
 
         # observe the last state
-        agent_input.append(batch["obs"][ep_idx, t_idx, agent_idx])
-        # agent_input.append(batch["obs"][ep_idx, t_idx, agent_idx][2:4])
+        # agent_input.append(batch["obs"][ep_idx, t_idx, agent_idx])
+        agent_input.append(batch["obs"][ep_idx, t_idx, agent_idx][-1:])
 
         # observe the last action
         # agent_input.append(batch["actions_onehot"][ep_idx, t_idx, agent_idx])
@@ -98,16 +106,26 @@ class RewardDecomposer:
                 module_list.append(None)
             else:
                 # reward group has idx + 1 observations
-                input_shape = input_shape_one_obs * (idx + 1)
-                module_list.append(self.build_reward_network(input_shape))
+                module_list.append(self.build_reward_network(input_shape_one_obs, (idx + 1)))
         return nn.ModuleList(module_list)
 
-    def build_reward_network(self, input_shape):
+    def build_reward_network(self, input_shape_one_obs, num_reward_agents):
+        input_shape = input_shape_one_obs * num_reward_agents
+
         if self.args.reward_parameter_sharing:
             if not self.args.assume_binary_reward:
-                module_sub_list = RewardNetwork(input_shape, self.args)
+                module_sub_list = RewardNetwork(self.args, input_shape)
             else:
-                module_sub_list = RewardClassificationNetwork(input_shape, self.args)
+                # If reward is an integer that's either 0 or 1, then we know that for a pair of agents, their
+                # reward together could be either -1, 0 or 1 for every agent. This means the for agent group
+                # of size k, the output shape will be 2*k + 1, except for the first one.
+                # For the sake of convenience, we allow single agent reward functions to be -1 as well
+                if num_reward_agents == 1:
+                    output_vals = [0, 1]
+                else:
+                    output_vals = list(range(-num_reward_agents, num_reward_agents + 1))
+                    output_vals = [-1, 0, 1]
+                module_sub_list = RewardClassificationNetwork(self.args, input_shape, output_vals)
         else:
             raise Exception("Currently not supporting no parameter sharing for the reward network, exiting...")
         return module_sub_list
@@ -134,38 +152,87 @@ class RewardDecomposer:
                 reward_outputs.append(reward_output)
 
         # Return the output rewards
-        return th.stack(reward_outputs, dim=2)
+        return reward_outputs
+
+    def get_all_combinations(self, filter_combos=True):
+        # This functions returns a list of pairs, where the first element is the indices that we should take in the
+        # output, and the second element is the sum that they represent (global class). We will provide an options off
+        # limiting all the global classes to be between 0 and n called "filter combos
+
+        # Start by making a list of all the options
+        reward_options = []
+        for idx, reward_group in enumerate(self.reward_groups):
+            for idx2, _ in enumerate(reward_group):
+                # Parameter Sharing assumed so using idx instead of idx2
+                if self.reward_networks[idx] is not None:
+                    reward_options.append(self.reward_networks[idx].output_vals)
+
+        # Now, we compute all of these combinations by doing the product of all these lists
+        # WARNING: This list is huge. exponentially large with the number of agents
+        reward_combos = list(product(*reward_options))
+
+        # Now compute the sum of every combo
+        output = [(combo, sum(combo)) for combo in reward_combos]
+
+        # Filter if necessary
+        if filter_combos:
+            output = [pair for pair in output if (0 <= pair[1] <= self.n_agents)]
+
+        # Finally, convert the represent indices into actual indices
+        # Create mapping array for this
+        reward_to_class_idx = np.array([-min(output_val) for output_val in reward_options])
+        output = [(np.array(pair[0]), pair[1]) for pair in output]
+        output = [(pair[0] + reward_to_class_idx, pair[1]) for pair in output]
+        return output, th.tensor(reward_to_class_idx)
 
     def local_probs_to_global_probs(self, local_probs):
-        local_probs = th.squeeze(local_probs)
+        if not len(local_probs):
+            return local_probs
+
         num_classes = self.n_agents + 1
+        global_prob_class_shape = local_probs[0].shape[:2]
+        global_probs = th.zeros(*global_prob_class_shape, num_classes)
 
-        if local_probs.shape[2] != self.n_agents:
-            raise Exception("Can't assume classification & large reward functions")
+        for indices_list, class_num in self.reward_combos:
+            # Compute probability for this indices group
+            curr_probs = th.ones(*global_prob_class_shape)
+            for reward_func_idx, class_idx in enumerate(indices_list):
+                curr_probs *= local_probs[reward_func_idx][:, :, class_idx]
 
-        global_probs = th.zeros(*local_probs.shape[:2], num_classes)
-        for class_num in range(num_classes):
-            global_prob_is_class = th.zeros(*local_probs.shape[:2])
-
-            # Find every indices group that is of size class_num, and compute their probability
-            indices_group = list(combinations(range(self.n_agents), class_num))
-            for indicies in indices_group:
-                # Compute probability for this indices group
-                curr_probs = th.ones(*local_probs.shape[:2])
-                for idx in range(self.n_agents):
-                    if idx in indicies:
-                        curr_probs *= local_probs[:, :, idx]
-                    else:
-                        curr_probs *= (1 - local_probs[:, :, idx])
-                global_prob_is_class += curr_probs
-
-            global_probs[:, :, class_num] = global_prob_is_class
+            # Add this combination to the total probability
+            global_probs[:, :, class_num] += curr_probs
 
         return global_probs
 
-    @staticmethod
-    def probs_to_reward(probs):
-        return th.where(probs > 0.5, 1., 0.)
+    def class_probs_to_local_rewards(self, class_probs):
+        # local rewards is a list of tensors of different lengths (different num of classes per reward group). We wish
+        # to find the maximal class indices for every reward group, so just loop through them
+        class_indices = []
+        for reward_group in class_probs:
+            class_indices.append(self.probs_to_class_idx(reward_group))
+        class_indices = th.stack(class_indices, dim=2)
+        local_rewards = self.class_idx_to_reward(class_indices)
+        return local_rewards
+
+    def probs_to_class_idx(self, probs):
+        return th.argmax(probs, dim=-1)
+
+    # Assumes that the last dimension of the arr is indices
+    def class_idx_to_reward(self, class_idx):
+        return class_idx - self.reward_to_class_idx.repeat(*class_idx.shape[:-1], 1)
+
+    def reward_to_class_idx(self, reward):
+        return reward + self.reward_to_class_idx.repeat(*reward.shape[:-1], 1)
+
+    def get_regularizing_weights(self):
+        regularizing_weights = []
+        for idx, reward_group in enumerate(self.reward_groups):
+            for _ in reward_group:
+                if idx == 0:
+                    regularizing_weights.append(0)
+                else:
+                    regularizing_weights.append(self.args.regularizing_weight)
+        return th.tensor(regularizing_weights)
 
     def local_rewards_to_agent_rewards(self, reward_outputs):
         # Basically turns [50, 50, n_reward_groups] -> [50, 50, n_agents]
@@ -213,7 +280,7 @@ class RewardDecomposer:
 
 
 class RewardNetwork(nn.Module):
-    def __init__(self, input_shape, args):
+    def __init__(self, args, input_shape):
         super(RewardNetwork, self).__init__()
         self.args = args
 
@@ -236,14 +303,15 @@ class RewardNetwork(nn.Module):
 
 # This is a classifcation network for the binary reward
 class RewardClassificationNetwork(nn.Module):
-    def __init__(self, input_shape, args):
+    def __init__(self, args, input_shape, output_vals):
         super(RewardClassificationNetwork, self).__init__()
         self.args = args
+        self.output_vals = output_vals
 
         self.fc1 = nn.Linear(input_shape, 64)
         self.fc2 = nn.Linear(64, 128)
         self.fc3 = nn.Linear(128, 64)
-        self.fc4 = nn.Linear(64, 1)
+        self.fc4 = nn.Linear(64, len(output_vals))
 
     def forward(self, inputs):
         x = F.relu(self.fc1(inputs))

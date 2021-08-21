@@ -9,14 +9,10 @@ from sacred.utils import apply_backspaces_and_linefeeds
 import sys
 import torch as th
 from utils.logging import get_logger
-from utils.logging import Logger
 import yaml
-import threading
 
 from components.exp_logger import ExperimentLogger
-from types import SimpleNamespace as SN
-
-import run
+from run import run
 
 SETTINGS['CAPTURE_MODE'] = "no"  # set to "no" if you want to see stdout/stderr in console
 logger = get_logger()
@@ -99,6 +95,7 @@ def main():
 
         # Here we want to see if there are any super configs that we need to update
         # Super configs will usually come from the multi_main.py where we change parameters in a single run
+        # print(config_dict)
         try:
             with open(os.path.join(os.path.dirname(__file__), "config", "global", "super_config.yaml"), "r") as f:
                 super_config = yaml.load(f)
@@ -110,31 +107,31 @@ def main():
 
         exp_logger.add_learner(config_dict["name"])
 
-        # Setting the random seed throughout the modules
-        # config = config_copy(_config)
-        # np.random.seed(config["seed"])
-        # th.manual_seed(config["seed"])
-        # config['env_args']['seed'] = config["seed"]
+        ex = Experiment("pymarl")
+        ex.logger = logger
+        ex.captured_out_filter = apply_backspaces_and_linefeeds
 
-        # run the framework with no sacred scheme
-        config_dict = run.args_sanity_check(config_dict, logger)
-        config_dict["device"] = "cuda" if config_dict["use_cuda"] else "cpu"
+        @ex.main
+        def my_main(_run, _config, _log):
+            # Setting the random seed throughout the modules
+            config = config_copy(_config)
+            np.random.seed(config["seed"])
+            th.manual_seed(config["seed"])
+            config['env_args']['seed'] = config["seed"]
 
-        # setup logger and wandb
-        logger_obj = Logger(logger)
-        if config_dict["use_wandb"]:
-            logger_obj.setup_wandb(config=config_dict)
+            # run the framework
+            run(_run, config, _log)
 
-        # Run the current test
-        run.run_sequential(args=SN(**config_dict), logger=logger_obj)
+        # now add all the config to sacred
+        ex.add_config(config_dict)
 
-        # Kill eveything
-        print("Stopping all threads")
-        for t in threading.enumerate():
-            if t.name != "MainThread":
-                print("Thread {} is alive! Is daemon: {}".format(t.name, t.daemon))
-                t.join(timeout=1)
-                print("Thread joined")
+        # Save to disk by default for sacred
+        logger.info("Saving to FileStorageObserver in results/sacred.")
+        file_obs_path = os.path.join(results_path, "sacred")
+
+        ex.observers.append(FileStorageObserver(file_obs_path))
+
+        ex.run_commandline(params)
 
 
 if __name__ == '__main__':

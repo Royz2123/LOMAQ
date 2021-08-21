@@ -39,15 +39,16 @@ l_params:
 decompose_reward: True
 reward_parameter_sharing: True
 reward_batch_size: 50
-reward_updates_per_batch: 50
+reward_updates_per_batch: 100
 reward_diff_threshold: 0.05
 assume_binary_reward: True
 reward_acc: 0.999
+regularizing_weight: 100
 
 # From the paper the maximal group size that the network will try to decompose by given (b2, l)
 # For example, beta2=1 with l=2 allows pairs within 1-hop neighborhood of eachother
-reward_beta2: 0
-reward_l: 1
+reward_beta2: 1
+reward_l: 2
 
 # If true clamps the rewards between 0 and 1 in the network output
 reward_clamp: False

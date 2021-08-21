@@ -11,7 +11,7 @@ MULTI_MAIN_PATH = os.path.join(os.path.dirname(__file__), "config", "global", "m
 SUPER_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config", "global", "super_config.yaml")
 
 DEFAULT_PYTHON_NAME = "python37"
-DEFAULT_MAIN_NAME = "src/main.py"
+DEFAULT_MAIN_NAME = "src/main_wandb.py"
 DEFAULT_PLOT_NAME = "src/plot.py"
 
 

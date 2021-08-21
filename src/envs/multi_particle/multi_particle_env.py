@@ -189,7 +189,7 @@ class MultiParticleEnv(MultiAgentEnv):
         return neighbors_idxs
 
     def step(self, actions):
-        actions = actions.detach().numpy().tolist()
+        actions = actions.cpu().detach().numpy().tolist()
         self.episode_steps += 1
         err_msg = "%r (%s) invalid" % (actions, type(actions))
         assert self.action_space.contains(actions), err_msg

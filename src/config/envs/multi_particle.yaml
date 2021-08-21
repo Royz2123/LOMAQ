@@ -7,13 +7,13 @@ env_args:
   num_landmarks: 1
   rules:
     reward:
-      landmark_radius: 0.3  #0.05
+      landmark_radius: 0.1
       collisions_reward: False
 
       # landmark reward_type, can be either "none", "binary", "continuous"
-      landmark_closest_reward: "none"
-      landmark_bonus_reward: "binary"
-      landmark_bonus_coeff: 1.0
+      landmark_closest_reward: "binary"
+      landmark_bonus_reward: "none"
+      landmark_bonus_coeff: 0.0
 
     graph:
       graph_type: "auto"            # can be either full, auto or empty
@@ -21,7 +21,7 @@ env_args:
 
     # observation params - can either be "none", "closest", "local", "all"
     obs:
-      landmarks: "all"
+      landmarks: "local"
       agents: "none"
 
       # In the local landmarks case, we will give the k closest landmarks. By default, k will be the max_deg + 1 of the

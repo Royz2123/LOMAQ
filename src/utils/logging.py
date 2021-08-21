@@ -2,6 +2,9 @@ from collections import defaultdict
 import logging
 import numpy as np
 
+import wandb
+
+
 class Logger:
     def __init__(self, console_logger):
         self.console_logger = console_logger
@@ -9,6 +12,9 @@ class Logger:
         self.use_tb = False
         self.use_sacred = False
         self.use_hdf = False
+
+        # added wandb to the logging options
+        self.use_wandb = False
 
         self.stats = defaultdict(lambda: [])
 
@@ -23,11 +29,23 @@ class Logger:
         self.sacred_info = sacred_run_dict.info
         self.use_sacred = True
 
+    def setup_wandb(self, config):
+        # wandb.login()
+        wandb.init(project=f"Local-QMIX", config=config)
+        self.use_wandb = True
+
+    def wandb_watch_model(self, model, criterion):
+        if self.use_wandb:
+            wandb.watch(model, criterion, log="all", log_freq=10)
+
     def log_stat(self, key, value, t, to_sacred=True):
         self.stats[key].append((t, value))
 
         if self.use_tb:
             self.tb_logger(key, value, t)
+
+        if self.use_wandb:
+            wandb.log({key: value}, step=t)
 
         if self.use_sacred and to_sacred:
             if key in self.sacred_info:
@@ -62,4 +80,3 @@ def get_logger():
     logger.setLevel('DEBUG')
 
     return logger
-

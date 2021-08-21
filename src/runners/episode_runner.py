@@ -64,8 +64,6 @@ class EpisodeRunner:
                 "obs": [self.env.get_obs()]
             }
 
-
-
             try:
                 self.batch.update(pre_transition_data, ts=self.t)
             except Exception as e:
@@ -158,5 +156,5 @@ class EpisodeRunner:
 
         for k, v in stats.items():
             if k != "n_episodes":
-                self.logger.log_stat(prefix + k + "_mean" , v/stats["n_episodes"], self.t_env)
+                self.logger.log_stat(prefix + k + "_mean", v / stats["n_episodes"], self.t_env)
         stats.clear()
