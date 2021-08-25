@@ -19,7 +19,7 @@ class LocalQMixer(nn.Module):
 
         # Now optimally we will need a graph dependency between the nodes
         # For now, lets assume that all agents are in a line like in the multi_cart_pole setting
-        self.depth_k = self.args.depth_k
+        self.depth_k = int(self.args.depth_k)
         self.graph_obj = args.graph_obj
 
         # create list of nbrhds in advance for every agent
