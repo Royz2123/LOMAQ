@@ -7,7 +7,7 @@ env_args:
   num_landmarks: 1
   rules:
     reward:
-      landmark_radius: 0.5
+      landmark_radius: 0.1
       collisions_reward: False
 
       # landmark reward_type, can be either "none", "binary", "continuous"
@@ -36,18 +36,18 @@ env_args:
 
     # overrides num_agents and num_landmarks with a grid of agents
     grid:
-      use_grid: False
+      use_grid: True
 
       # num of agents in every direction
-      num_x_agents: 4
-      num_y_agents: 4
+      num_x_agents: 7
+      num_y_agents: 2
 
       # distances between the gridded agents
-      grid_dist_x: 1.5
-      grid_dist_y: 2.05
+      grid_dist_x: 1.05
+      grid_dist_y: 2.10
 
       # how much should the odd cols of agents be offsetted in the y direction
-      grid_offset: 0.0
+      grid_offset: 1.05
 
       # spawn radius for both the agents and the landmarks
       agent_spawn_radius: 0
