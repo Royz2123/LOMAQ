@@ -96,7 +96,8 @@ class EpisodeRunner:
                 # mode = "human" if self.args.human_mode else "rgb_array"
                 self.env.render()
 
-                if not self.args.human_mode and len(self.test_returns) == (self.args.test_nepisode - 1):
+                # if not self.args.human_mode and len(self.test_returns) == (self.args.test_nepisode - 1):
+                if len(self.test_returns) == (self.args.test_nepisode - 1):
                     img = self.env.viewer.render(return_rgb_array=True)
                     img_array.append(img)
 
@@ -142,14 +143,14 @@ class EpisodeRunner:
             self._log(cur_returns, cur_stats, log_prefix)
 
             # Save image array as video
-            if not self.args.human_mode:
-                size = tuple(img_array[0].shape[:2])
-                out = cv2.VideoWriter('temp.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 15, size)
-                for i in range(len(img_array)):
-                    out.write(img_array[i])
-                out.release()
-                self.logger.log_stat("test_run", "temp.mp4", self.t_env, video=True)
-                exit()
+            # if not self.args.human_mode:
+            size = tuple(img_array[0].shape[:2])
+            out = cv2.VideoWriter('temp.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 15, size)
+            for i in range(len(img_array)):
+                out.write(img_array[i])
+            out.release()
+            self.logger.log_stat("test_run", "temp.mp4", self.t_env, video=True)
+            exit()
         elif self.t_env - self.log_train_stats_t >= self.args.runner_log_interval:
             self._log(cur_returns, cur_stats, log_prefix)
             if hasattr(self.mac.action_selector, "epsilon"):
