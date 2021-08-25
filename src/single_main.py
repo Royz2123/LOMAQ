@@ -22,12 +22,15 @@ def main():
     run_num = get_param(params, "--run-num")
 
     # If test num not specified, raise an error so we don't have any problems
-    if test_num is None:
-        raise Exception("Please specify a test_num")
+    if type(test_num) is not int:
+        raise Exception("Please specify a valid test_num")
 
     # If test num not specified, raise an error so we don't have any problems
-    if run_num is None:
-        raise Exception("Please specify a test_num")
+    if type(run_num) is not int:
+        raise Exception("Please specify a valid run_num")
+
+    test_num = int(test_num)
+    run_num = int(run_num)
 
     # Now try to read the test and see if it's valid
     test_config = get_config_dict(f"test{test_num}", "tests")

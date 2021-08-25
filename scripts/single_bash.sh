@@ -8,6 +8,6 @@ if [ "$#" -ne 2 ]; then
   exit 1;
 fi
 
-echo "Running test for test num $1, with test index $2"
+echo "Running test for test num $1, with run index $2"
 
 python3 src/single_main.py --test-num=$1 --run-num=$2
