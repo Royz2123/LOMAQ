@@ -15,3 +15,4 @@ override:
   human_mode: False
   t_max: 1000000
   depth_k: [0, 1, 2, 3]
+  use_cuda: False
