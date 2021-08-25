@@ -2,9 +2,9 @@
 # Differs from the config files! watch out for collisions. This yaml triumphs in terms of collisions
 
 # number of tests to run (runs of main)
-num_runs: 5
+num_runs: 4
 env_name: multi_particle
-alg_name: [local_qmix,qmix,iql_local,iql,qtran]
+alg_name: local_qmix
 
 # If an argument is in single value form - then it is constant throught all the runs
 # If an argument is in a list of length 2, then the program will assume a series of airthmetic progression [min, max]
@@ -13,3 +13,5 @@ alg_name: [local_qmix,qmix,iql_local,iql,qtran]
 
 override:
   human_mode: False
+  t_max: 1000000
+  depth_k: [0, 1, 2, 3]
