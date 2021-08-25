@@ -15,6 +15,7 @@ class Logger:
 
         # added wandb to the logging options
         self.use_wandb = False
+        self.wandb_run = None
 
         self.stats = defaultdict(lambda: [])
 
@@ -31,8 +32,12 @@ class Logger:
 
     def setup_wandb(self, config):
         # wandb.login()
-        wandb.init(project=f"Local-QMIX", config=config)
+        self.wandb_run = wandb.init(project=f"Local-QMIX", config=config, reinit=True)
         self.use_wandb = True
+
+    def new_run_wandb(self):
+        if self.use_wandb and self.wandb_run is not None:
+            self.wandb_run.finish()
 
     def wandb_watch_model(self, model, criterion):
         if self.use_wandb:

@@ -136,6 +136,9 @@ def main():
                 t.join(timeout=1)
                 print("Thread joined")
 
+        # Setup WANDB for new run
+        logger_obj.new_run_wandb()
+
 
 if __name__ == '__main__':
     main()
