@@ -43,7 +43,11 @@ class Logger:
         if self.use_wandb:
             wandb.watch(model, criterion, log="all", log_freq=10)
 
-    def log_stat(self, key, value, t, to_sacred=True):
+    def log_stat(self, key, value, t, to_sacred=True, video=False):
+        if video:
+            wandb.log({key: wandb.Video(value)}, step=t)
+            return
+
         self.stats[key].append((t, value))
 
         if self.use_tb:

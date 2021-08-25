@@ -58,4 +58,4 @@ target_update_interval: 50
 #  update_type: "hard"     # can be either hard or soft
 #  update_interval_t: 100000
 
-use_wandb: True
+human_mode: False

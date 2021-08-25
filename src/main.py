@@ -122,7 +122,7 @@ def main():
 
         # setup logger and wandb
         logger_obj = Logger(logger)
-        if config_dict["use_wandb"]:
+        if not config_dict["human_mode"]:
             logger_obj.setup_wandb(config=config_dict)
 
         # Run the current test

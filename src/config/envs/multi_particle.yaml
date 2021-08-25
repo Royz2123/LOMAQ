@@ -39,8 +39,8 @@ env_args:
       use_grid: True
 
       # num of agents in every direction
-      num_x_agents: 7
-      num_y_agents: 2
+      num_x_agents: 5
+      num_y_agents: 3
 
       # distances between the gridded agents
       grid_dist_x: 1.05
@@ -63,4 +63,4 @@ test_interval: 20000
 log_interval: 20000
 runner_log_interval: 500
 learner_log_interval: 500
-t_max: 2000
+t_max: 2000000
