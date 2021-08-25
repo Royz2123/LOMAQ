@@ -55,7 +55,7 @@ class MultiCartPoleEnv(MultiAgentEnv):
             "episode_limit": episode_limit,
             "animation_speed": animation_speed,
             "screen": {
-                "width": 1000,
+                "width": 700,
                 "height": 400,
                 "carty": 100,
                 "polewidth": 10.0,

@@ -9,6 +9,21 @@ from itertools import product
 from matplotlib import pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+# We define here some terms before we get started
+# RewardNetwork - A single reward network that represents a certain n_j
+# RewardGroup - A group of reward networks that represent all n_j of size l
+# RewardGroups - All of the reward networks
+
+# Possible output types (mostly when using the classification scheme)
+(
+    RAW,
+    FLAT_RAW,
+    PRED,
+    CLASSES,
+    LOCAL_REWARDS,
+    AGENT_REWARDS
+) = range(6)
+
 
 class RewardDecomposer:
     DEFAULT_DIR = "src/reward_decomposition/saved_models"
@@ -17,16 +32,16 @@ class RewardDecomposer:
     def __init__(self, scheme, args, try_load=True):
         self.n_agents = args.n_agents
         self.args = args
+        self.input_shape_one_obs = self._get_input_shape(scheme)
 
         # We will now build all the reward networks. Currently done with parameter sharing between networks of the same
         # input size. Our reward networks is a module_list of size l where index i marks the reward functions of size
         # i + 1
-        input_shape_one_obs = self._get_input_shape(scheme)
-        self.reward_groups = args.graph_obj.find_reward_groups(l=args.reward_l, beta2=args.reward_beta2)
-        self.reward_networks = self.build_reward_networks(input_shape_one_obs)
+        self.reward_groups_indices = args.graph_obj.find_reward_groups(l=args.reward_l, beta2=args.reward_beta2)
+        self.reward_groups = self.build_reward_groups()
+        self.reward_networks = nn.ModuleList([reward_group.reward_network for reward_group in self.reward_groups])
 
-        self.reward_combos, self.reward_to_class_idx = self.get_all_combinations(filter_combos=True)
-
+        self.reward_combos = self.get_all_combinations(filter_combos=True)
         self.regularizing_weights = self.get_regularizing_weights()
 
         # try loading pretrained reward decomposition model
@@ -54,29 +69,6 @@ class RewardDecomposer:
 
         return input_shape
 
-    # def build_data_old(self, batch):
-    #     inputs = []
-    #     outputs = []
-    #     for ep_idx in range(batch.batch_size):
-    #         for t_idx in range(batch.max_seq_length):
-    #             team_inputs = self.build_team_inputs(batch, ep_idx, t_idx)
-    #             inputs.append(team_inputs)
-    #
-    #             if self.args.assume_binary_reward:
-    #                 # We have effectively n+1 classes, all the values between [0, n] including
-    #                 # outputs.append(F.one_hot(batch["reward"][ep_idx, t_idx].int(), num_classes=(self.n_agents + 1)))
-    #                 outputs.append(batch["reward"][ep_idx, t_idx].int())
-    #             else:
-    #                 outputs.append(th.sum(batch["reward"][ep_idx, t_idx]))
-    #
-    #             # we include the step that led to the terminated state, but now exit
-    #             if batch["terminated"][ep_idx, t_idx][0]:
-    #                 break
-    #
-    #     inputs = th.stack(inputs)
-    #     outputs = th.stack(outputs)
-    #     return inputs, outputs
-
     def build_team_inputs(self, batch, ep_idx, t_idx):
         team_inputs = list()
         for agent_idx in range(self.n_agents):
@@ -99,60 +91,54 @@ class RewardDecomposer:
         agent_input = th.cat(agent_input)
         return agent_input
 
-    def build_reward_networks(self, input_shape_one_obs):
-        module_list = []
-        for idx, reward_groups in enumerate(self.reward_groups):
-            if len(reward_groups) == 0:
-                module_list.append(None)
-            else:
-                # reward group has idx + 1 observations
-                module_list.append(self.build_reward_network(input_shape_one_obs, (idx + 1)))
-        return nn.ModuleList(module_list)
+    def build_reward_groups(self):
+        reward_groups = []
+        for idx, indices_groups in enumerate(self.reward_groups_indices):
+            reward_groups.append(RewardGroup(
+                self.args,
+                indices_groups,
+                self.input_shape_one_obs,
+                idx + 1,
+            ))
+        return reward_groups
 
-    def build_reward_network(self, input_shape_one_obs, num_reward_agents):
-        input_shape = input_shape_one_obs * num_reward_agents
-
-        if self.args.reward_parameter_sharing:
-            if not self.args.assume_binary_reward:
-                module_sub_list = RewardNetwork(self.args, input_shape)
-            else:
-                # If reward is an integer that's either 0 or 1, then we know that for a pair of agents, their
-                # reward together could be either -1, 0 or 1 for every agent. This means the for agent group
-                # of size k, the output shape will be 2*k + 1, except for the first one.
-                # For the sake of convenience, we allow single agent reward functions to be -1 as well
-                if num_reward_agents == 1:
-                    output_vals = [0, 1]
-                else:
-                    output_vals = list(range(-num_reward_agents, num_reward_agents + 1))
-                    output_vals = [-1, 0, 1]
-                module_sub_list = RewardClassificationNetwork(self.args, input_shape, output_vals)
-        else:
-            raise Exception("Currently not supporting no parameter sharing for the reward network, exiting...")
-        return module_sub_list
-
-    def single_network_forward(self, reward_input, network_idx=0):
-        return self.reward_networks[network_idx](reward_input)
+    def single_forward(self, reward_input, reward_group_idx=0):
+        return self.reward_groups[reward_group_idx].single_forward(reward_input)
 
     def forward(self, reward_inputs):
-        # Run through the reward networks
-        # Note that the reward networks aren't sequential so no need for hidden states
+        # Get the reward output for every reward group based on the output type
+        reward_group_outputs = []
+        for reward_group in self.reward_groups:
+            reward_group_outputs.append(reward_group.forward(reward_inputs))
+        return reward_group_outputs
 
-        # We need to run every reward indices
-        reward_outputs = []
-        for idx, reward_groups in enumerate(self.reward_groups):
-            for indices_group in reward_groups:
-                # get the reward inputs of every agent in indices group
-                reward_input = reward_inputs[:, :, indices_group]
+    def convert_raw_outputs(self, raw_outputs, output_type=AGENT_REWARDS):
+        # Note that local_rewards and raw are the same option for the regression scheme, therefore the type in that case
+        # can be local rewards
+        if not self.args.assume_binary_reward and output_type == RAW:
+            output_type = LOCAL_REWARDS
 
-                # reshape the reward input by concatenating agents inputs
-                reward_input = th.reshape(reward_input, shape=(*reward_input.shape[:-2], -1))
-
-                # get outputs from the network for this combination
-                reward_output = self.reward_networks[idx](reward_input)
-                reward_outputs.append(reward_output)
-
-        # Return the output rewards
-        return reward_outputs
+        converted_outputs = [
+            self.reward_groups[idx].convert_raw_outputs(raw_output, output_type=output_type)
+            for idx, raw_output in enumerate(raw_outputs)
+        ]
+        # Flatten the outputs nicely if we're in raw or pred
+        if output_type in [FLAT_RAW, PRED]:
+            converted_outputs = [
+                indicies_output for reward_group_output in converted_outputs
+                for indicies_output in reward_group_output
+            ]
+        if output_type == PRED:
+            if not self.args.assume_binary_reward:
+                converted_outputs = th.stack(converted_outputs, dim=2)
+                converted_outputs = th.sum(converted_outputs, dim=2)
+            else:
+                converted_outputs = self.raw_to_pred(converted_outputs)
+        elif output_type in [CLASSES, LOCAL_REWARDS]:
+            converted_outputs = th.cat(converted_outputs, dim=2)
+        elif output_type == AGENT_REWARDS:
+            converted_outputs = sum(converted_outputs)
+        return converted_outputs
 
     def get_all_combinations(self, filter_combos=True):
         # This functions returns a list of pairs, where the first element is the indices that we should take in the
@@ -160,32 +146,31 @@ class RewardDecomposer:
         # limiting all the global classes to be between 0 and n called "filter combos
 
         # Start by making a list of all the options
-        reward_options = []
+        reward_classes = []
+        reward_values = []
         for idx, reward_group in enumerate(self.reward_groups):
-            for idx2, _ in enumerate(reward_group):
-                # Parameter Sharing assumed so using idx instead of idx2
-                if self.reward_networks[idx] is not None:
-                    reward_options.append(self.reward_networks[idx].output_vals)
+            reward_classes += [list(range(len(reward_group.output_vals)))] * len(reward_group.indices_groups)
+            reward_values += [reward_group.output_vals] * len(reward_group.indices_groups)
 
         # Now, we compute all of these combinations by doing the product of all these lists
         # WARNING: This list is huge. exponentially large with the number of agents
-        reward_combos = list(product(*reward_options))
+        reward_combos_classes = list(product(*reward_classes))
+        reward_combos_values = list(product(*reward_values))
 
         # Now compute the sum of every combo
-        output = [(combo, sum(combo)) for combo in reward_combos]
+        output = [
+            (np.array(classes), sum(values)) for classes, values in
+            zip(reward_combos_classes, reward_combos_values)
+        ]
 
         # Filter if necessary
         if filter_combos:
-            output = [pair for pair in output if (0 <= pair[1] <= self.n_agents)]
+            output = [pair for pair in output if (0 <= pair[1] <= self.n_agents and int(pair[1]) == float(pair[1]))]
+            output = [(pair[0], int(pair[1])) for pair in output]
 
-        # Finally, convert the represent indices into actual indices
-        # Create mapping array for this
-        reward_to_class_idx = np.array([-min(output_val) for output_val in reward_options])
-        output = [(np.array(pair[0]), pair[1]) for pair in output]
-        output = [(pair[0] + reward_to_class_idx, pair[1]) for pair in output]
-        return output, th.tensor(reward_to_class_idx)
+        return output
 
-    def local_probs_to_global_probs(self, local_probs):
+    def raw_to_pred(self, local_probs):
         if not len(local_probs):
             return local_probs
 
@@ -204,55 +189,20 @@ class RewardDecomposer:
 
         return global_probs
 
-    def class_probs_to_local_rewards(self, class_probs):
-        # local rewards is a list of tensors of different lengths (different num of classes per reward group). We wish
-        # to find the maximal class indices for every reward group, so just loop through them
-        class_indices = []
-        for reward_group in class_probs:
-            class_indices.append(self.probs_to_class_idx(reward_group))
-        class_indices = th.stack(class_indices, dim=2)
-        local_rewards = self.class_idx_to_reward(class_indices)
-        return local_rewards
-
-    def probs_to_class_idx(self, probs):
-        return th.argmax(probs, dim=-1)
-
-    # Assumes that the last dimension of the arr is indices
-    def class_idx_to_reward(self, class_idx):
-        return class_idx - self.reward_to_class_idx.repeat(*class_idx.shape[:-1], 1)
-
-    def reward_to_class_idx(self, reward):
-        return reward + self.reward_to_class_idx.repeat(*reward.shape[:-1], 1)
-
     def get_regularizing_weights(self):
         regularizing_weights = []
         for idx, reward_group in enumerate(self.reward_groups):
-            for _ in reward_group:
-                if idx == 0:
-                    regularizing_weights.append(0)
-                else:
-                    regularizing_weights.append(self.args.regularizing_weight)
-        return th.tensor(regularizing_weights)
+            if idx == 0:
+                regularizing_weights.append(0)
+            else:
+                regularizing_weights.append(self.args.regularizing_weight)
+        return regularizing_weights
 
-    def local_rewards_to_agent_rewards(self, reward_outputs):
-        # Basically turns [50, 50, n_reward_groups] -> [50, 50, n_agents]
-
-        # start by reshaping into 3 dimensinal
-        local_rewards = th.zeros(*reward_outputs.shape[:2], self.n_agents)
-        reward_outputs = th.reshape(reward_outputs, shape=(*reward_outputs.shape[:2], -1))
-
-        total_idx = 0
-        for idx, reward_groups in enumerate(self.reward_groups):
-            for indices_group in reward_groups:
-                # For every agent in the group, add the weighted reward contribution
-                contrib_weight = (1 / (idx + 1))
-                weighted_reward = contrib_weight * reward_outputs[:, :, [total_idx]]
-                weighted_reward = weighted_reward.repeat(1, 1, (idx + 1))
-                local_rewards[:, :, indices_group] += weighted_reward
-                total_idx += 1
-
-        # Return the output rewards
-        return local_rewards
+    def compute_regularization(self, raw_outputs):
+        reg_loss = 0
+        for idx, raw_output in enumerate(raw_outputs):
+            reg_loss += self.regularizing_weights[idx] * self.reward_groups[idx].compute_regularization(raw_output)
+        return reg_loss
 
     def parameters(self):
         return self.reward_networks.parameters()
@@ -277,6 +227,131 @@ class RewardDecomposer:
         if path is None:
             path = self.create_path()
         self.reward_networks.load_state_dict(th.load(path, map_location=lambda storage, loc: storage))
+
+
+# This class represents all of the NN that are of the same size n_j
+class RewardGroup(nn.Module):
+    def __init__(self, args, indices_groups, input_shape_one_obs, num_reward_agents):
+        super(RewardGroup, self).__init__()
+
+        self.args = args
+        self.indices_groups = indices_groups
+
+        self.input_shape_one_obs = input_shape_one_obs
+        self.num_reward_agents = num_reward_agents
+        self.contrib_weight = 1 / self.num_reward_agents
+
+        self.input_shape = self.input_shape_one_obs * num_reward_agents
+        self.output_shape, self.output_vals = self.compute_output_scheme()
+
+        self.reward_network = self.build_reward_network()
+
+    # If the reward network is a classifier, then outputs like classes otherwise 1
+    def compute_output_scheme(self):
+        output_vals = None
+        output_shape = 1
+
+        if self.args.reward_parameter_sharing:
+            # If reward is an integer that's either 0 or 1, then we know that for a pair of agents, their
+            # reward together could be either -1, 0 or 1 for every agent. This means the for agent group
+            # of size k, the output shape will be 2*k + 1, except for the first one.
+            # For the sake of convenience, we allow single agent reward functions to be -1 as well
+            if self.num_reward_agents == 1:
+                output_vals = [-1, -0.5, 0, 0.5, 1]
+            else:
+                output_vals = list(range(-self.num_reward_agents, self.num_reward_agents + 1))
+                output_vals = [-1, -0.5, 0, 0.5, 1]
+            output_shape = len(output_vals)
+        return output_shape, output_vals
+
+    def build_reward_network(self):
+        if len(self.indices_groups) == 0:
+            return None
+
+        if self.args.reward_parameter_sharing:
+            if not self.args.assume_binary_reward:
+                module_sub_list = RewardNetwork(self.args, self.input_shape)
+            else:
+                module_sub_list = RewardClassificationNetwork(self.args, self.input_shape, self.output_vals)
+        else:
+            raise Exception("Currently not supporting no parameter sharing for the reward network, exiting...")
+        return module_sub_list
+
+    def single_forward(self, reward_input):
+        return self.reward_network(reward_input)
+
+    def forward(self, reward_inputs):
+        # Recieves reward inputs of shape [num_batches, ep_length, team_size, input_size]
+        # Runs through the reward network for every indices_group in indices_groups
+        # Returns a tensors of shape [num_batches, ep_length, indices_group_length]
+        reward_outputs = []
+        for indices_group in self.indices_groups:
+            # get the reward inputs of every agent in indices group
+            reward_input = reward_inputs[:, :, indices_group]
+
+            # reshape the reward input by concatenating agents inputs
+            reward_input = th.reshape(reward_input, shape=(*reward_input.shape[:-2], -1))
+
+            # get outputs from the network for this combination
+            reward_output = self.reward_network(reward_input)
+            reward_outputs.append(reward_output)
+        return reward_outputs
+
+    def convert_raw_outputs(self, reward_outputs, output_type=AGENT_REWARDS):
+        if output_type >= CLASSES:
+            reward_outputs = th.stack(reward_outputs, dim=2)
+
+        if not self.args.assume_binary_reward:
+            if output_type == CLASSES:
+                raise Exception("Regression networks cannot output classes")
+        else:
+            if output_type >= CLASSES:
+                reward_outputs = RewardGroup.raw_to_classes(reward_outputs)
+            if output_type >= LOCAL_REWARDS:
+                reward_outputs = self.classes_to_local_rewards(reward_outputs)
+
+        # For both classification and regression, we offer converting into agent_rewards
+        if output_type == AGENT_REWARDS:
+            reward_outputs = self.local_rewards_to_agent_rewards(reward_outputs)
+        return reward_outputs
+
+    @staticmethod
+    def raw_to_classes(probs):
+        return th.argmax(probs, dim=-1, keepdim=True)
+
+    def classes_to_local_rewards(self, classes):
+        # mask = th.tensor(np.array([min(self.output_vals)])).repeat(*classes.shape)
+        return classes.apply_(lambda x: self.output_vals[x])
+
+    def local_rewards_to_agent_rewards(self, local_rewards):
+        agent_rewards = th.zeros(*local_rewards.shape[:2], self.args.n_agents)
+        local_rewards = th.reshape(local_rewards, shape=(*local_rewards.shape[:2], -1))
+
+        for idx, indices_group in enumerate(self.indices_groups):
+            weighted_reward = self.contrib_weight * local_rewards[:, :, [idx]]
+            weighted_reward = weighted_reward.repeat(1, 1, len(indices_group))
+            agent_rewards[:, :, indices_group] += weighted_reward
+
+        return agent_rewards
+
+    def compute_regularization(self, raw_outputs):
+        # Gets as input a list of outputs representing every rnj output
+        # a list of length num_rnj functions with tensors of shape [num_batches, ep_len, output_shape]
+        # Now add the regularizing loss
+        reg_loss = 0
+
+        for output in raw_outputs:
+            # For regression this is fairly easy
+            if not self.args.assume_binary_reward:
+                reg_loss += th.sum(th.abs(output))
+            # A little more difficult for classification, we want to punish every probability as they travel farther
+            # 0. An ideal approach would be pi * val[i]
+            else:
+                values = th.square(th.tensor(np.array([self.output_vals])))
+                values = th.reshape(values, shape=(1, 1, -1))
+                values = values.repeat(*output.shape[:-1], 1)
+                reg_loss += th.sum(output * values)
+        return reg_loss
 
 
 class RewardNetwork(nn.Module):
@@ -317,5 +392,5 @@ class RewardClassificationNetwork(nn.Module):
         x = F.relu(self.fc1(inputs))
         y = F.leaky_relu(self.fc2(x))
         h = F.tanh(self.fc3(y))
-        q = F.softmax(self.fc4(h))
+        q = F.softmax(self.fc4(h), dim=-1)
         return q
