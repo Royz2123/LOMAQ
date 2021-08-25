@@ -58,7 +58,7 @@ env_args:
       landmark_spawn_offset_y: 0
 
 test_greedy: True
-test_nepisode: 1
+test_nepisode: 10
 test_interval: 20000
 log_interval: 20000
 runner_log_interval: 500
