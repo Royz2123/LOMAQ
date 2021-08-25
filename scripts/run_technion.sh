@@ -18,5 +18,5 @@ fi
 
 echo "Running test for enviroment $env_name, with algorithm $alg_name"
 
-xvfb-run -e /dev/stdout python3 src/main.py --env-config=$env_name --alg-config=$alg_name
+xvfb-run -a -e /dev/stdout python3 src/main.py --env-config=$env_name --alg-config=$alg_name
 
