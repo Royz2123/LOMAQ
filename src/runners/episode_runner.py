@@ -144,11 +144,11 @@ class EpisodeRunner:
             # Save image array as video
             if not self.args.human_mode:
                 size = tuple(img_array[0].shape[:2])
-                out = cv2.VideoWriter('temp.avi', cv2.VideoWriter_fourcc(*'MPEG'), 15, size)
+                out = cv2.VideoWriter('temp.mp4', cv2.VideoWriter_fourcc(*'MP4V'), 15, size)
                 for i in range(len(img_array)):
                     out.write(img_array[i])
                 out.release()
-                self.logger.log_stat("test_run", "temp.avi", self.t_env, video=True)
+                self.logger.log_stat("test_run", "temp.mp4", self.t_env, video=True)
                 exit()
         elif self.t_env - self.log_train_stats_t >= self.args.runner_log_interval:
             self._log(cur_returns, cur_stats, log_prefix)
