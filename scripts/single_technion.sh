@@ -1,0 +1,13 @@
+#!/bin/sh
+
+export DISPLAY=localhost:0.0
+LANG=en_US
+
+if [ "$#" -ne 2 ]; then
+  echo "Usage: sh scripts/single_technion.sh [test-num] [run-num]";
+  exit 1;
+fi
+
+echo "Running test for test num $1, with test index $2"
+
+xvfb-run -a -e /dev/stdout python3 src/single_main.py --test-num=$1 --run-num=$2

@@ -53,3 +53,28 @@ def config_copy(config):
         return [config_copy(v) for v in config]
     else:
         return deepcopy(config)
+
+
+def get_current_run_override_config(orig_dict, test_num, num_tests):
+    # If this is still a dictionary, we need to go deeper for each new argument
+    if type(orig_dict) == dict:
+        single_dict = {}
+        for k, v in orig_dict.items():
+            single_dict[k] = get_current_run_override_config(v, test_num, num_tests)
+        return single_dict
+
+    elif type(orig_dict) == list:
+        # Assume [min, max] if ints
+        if len(orig_dict) == 2 and type(orig_dict[0]) == int and type(orig_dict[1]) == int:
+            delta = orig_dict[1] - orig_dict[0]
+            return orig_dict[0] + delta * (test_num / (num_tests - 1))
+
+        elif len(orig_dict) != num_tests:
+            raise Exception(f"List length must be equal to num_tests or 2. Params: {orig_dict}, Required: {num_tests}")
+
+        else:
+            return orig_dict[test_num]
+
+    # In this case, just assume constant value
+    else:
+        return orig_dict

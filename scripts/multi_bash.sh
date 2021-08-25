@@ -13,4 +13,4 @@ if [ "$#" -gt 1 ]; then
 fi
 echo "Running test number $test_num"
 
-python3 src/multi_main.py --test-num=$test_num
+python3 src/multi_main.py --test-num=$test_num --platform=bash
