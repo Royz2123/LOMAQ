@@ -12,4 +12,4 @@ if [ "$#" -gt 1 ]; then
   exit 1
 fi
 
-xvfb-run -e /dev/stdout python3 src/multi_main.py --test-num=$test_num
+xvfb-run -a -e /dev/stdout python3 src/multi_main.py --test-num=$test_num
