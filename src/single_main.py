@@ -15,22 +15,21 @@ TESTS_PATH = os.path.join(os.path.dirname(__file__), "config", "tests")
 SUPER_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config", "super_config.yaml")
 
 
+def convert_to_int(s):
+    try:
+        return int(s)
+    except ValueError:
+        raise Exception("Please specify a valid test/run num")
+
+
 def main():
     # First try to see what test we're dealing with
     params = deepcopy(sys.argv)
     test_num = get_param(params, "--test-num")
     run_num = get_param(params, "--run-num")
 
-    # If test num not specified, raise an error so we don't have any problems
-    if type(test_num) is not int:
-        raise Exception("Please specify a valid test_num")
-
-    # If test num not specified, raise an error so we don't have any problems
-    if type(run_num) is not int:
-        raise Exception("Please specify a valid run_num")
-
-    test_num = int(test_num)
-    run_num = int(run_num)
+    test_num = convert_to_int(test_num)
+    run_num = convert_to_int(run_num)
 
     # Now try to read the test and see if it's valid
     test_config = get_config_dict(f"test{test_num}", "tests")
