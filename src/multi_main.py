@@ -16,7 +16,7 @@ SUPER_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config", "super_con
 
 
 def make_command(test_num, run_num, platform):
-    return f"sh scripts/single_{platform}.sh {test_num} {run_num}"
+    return f"scripts/single_{platform}.sh {test_num} {run_num}"
 
 
 def main():
