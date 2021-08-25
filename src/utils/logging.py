@@ -3,6 +3,7 @@ import logging
 import numpy as np
 
 import wandb
+import imageio
 
 
 class Logger:
@@ -31,7 +32,6 @@ class Logger:
         self.use_sacred = True
 
     def setup_wandb(self, config):
-        # wandb.login()
         self.wandb_run = wandb.init(project=f"Local-QMIX", config=config, reinit=True)
         self.use_wandb = True
 
@@ -43,9 +43,17 @@ class Logger:
         if self.use_wandb:
             wandb.watch(model, criterion, log="all", log_freq=10)
 
-    def log_stat(self, key, value, t, to_sacred=True, video=False):
-        if video:
-            wandb.log({key: wandb.Video(value)}, step=t)
+    def log_stat(self, key, value, t, to_sacred=True, video=False, image=False, images=False):
+        if self.use_wandb and image:
+            wandb.log({key: wandb.Image(value)})
+            return
+
+        if self.use_wandb and images:
+            wandb.log({key: [wandb.Image(img) for img in value]})
+            return
+
+        if self.use_wandb and video:
+            wandb.log({key: wandb.Video(value, format="gif")})
             return
 
         self.stats[key].append((t, value))

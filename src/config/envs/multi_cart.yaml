@@ -17,9 +17,10 @@ env_args:
     edge_springs: True
 
 test_greedy: True
-test_nepisode: 100
+test_nepisode: 10
 test_interval: 20000
 log_interval: 20000
+save_vid_interval: 100000
 runner_log_interval: 500
 learner_log_interval: 500
 t_max: 1000000

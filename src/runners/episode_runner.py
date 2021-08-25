@@ -7,6 +7,7 @@ import numpy as np
 import time
 
 import wandb
+import imageio
 
 
 class EpisodeRunner:
@@ -32,6 +33,7 @@ class EpisodeRunner:
 
         # Log the first run
         self.log_train_stats_t = -1000000
+        self.log_last_upload_t = -1000000
 
     def setup(self, scheme, groups, preprocess, mac):
         self.new_batch = partial(EpisodeBatch, scheme, groups, self.batch_size, self.episode_limit + 1,
@@ -59,6 +61,9 @@ class EpisodeRunner:
         terminated = False
         episode_return = 0
         self.mac.init_hidden(batch_size=self.batch_size)
+
+        last_test_episode = test_mode and (len(self.test_returns) == self.args.test_nepisode - 1)
+        upload_vid_episode = last_test_episode and (self.t_env - self.log_last_upload_t) >= self.args.save_vid_interval
 
         img_array = []
         while not terminated:
@@ -96,8 +101,7 @@ class EpisodeRunner:
                 # mode = "human" if self.args.human_mode else "rgb_array"
                 self.env.render()
 
-                # if not self.args.human_mode and len(self.test_returns) == (self.args.test_nepisode - 1):
-                if len(self.test_returns) == (self.args.test_nepisode - 1):
+                if upload_vid_episode:
                     img = self.env.viewer.render(return_rgb_array=True)
                     img_array.append(img)
 
@@ -139,18 +143,9 @@ class EpisodeRunner:
 
         cur_returns.append(episode_return)
 
-        if test_mode and (len(self.test_returns) == self.args.test_nepisode):
+        if last_test_episode:
             self._log(cur_returns, cur_stats, log_prefix)
 
-            # Save image array as video
-            # if not self.args.human_mode:
-            size = tuple(img_array[0].shape[:2])
-            out = cv2.VideoWriter('temp.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 15, size)
-            for i in range(len(img_array)):
-                out.write(img_array[i])
-            out.release()
-            self.logger.log_stat("test_run", "temp.mp4", self.t_env, video=True)
-            exit()
         elif self.t_env - self.log_train_stats_t >= self.args.runner_log_interval:
             self._log(cur_returns, cur_stats, log_prefix)
             if hasattr(self.mac.action_selector, "epsilon"):
@@ -167,6 +162,14 @@ class EpisodeRunner:
                 }
             )
 
+        # Should we save a recording of this episode and try to upload?
+        if upload_vid_episode:
+            with imageio.get_writer("test.gif", mode="I") as writer:
+                for idx, frame in enumerate(img_array):
+                    writer.append_data(frame)
+            self.logger.log_stat("test_vid_gif", "test.gif", self.t_env, video=True)
+            self.log_last_upload_t = self.t_env
+
 
         return self.batch
 
@@ -179,3 +182,5 @@ class EpisodeRunner:
             if k != "n_episodes":
                 self.logger.log_stat(prefix + k + "_mean", v / stats["n_episodes"], self.t_env)
         stats.clear()
+
+
