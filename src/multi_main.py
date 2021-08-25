@@ -16,7 +16,7 @@ SUPER_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config", "super_con
 
 
 def make_command(test_num, run_num, platform):
-    return f"scripts/single_{platform}.sh {test_num} {run_num}"
+    return f"sh scripts/single_{platform}.sh {test_num} {run_num}"
 
 
 def main():
@@ -41,7 +41,7 @@ def main():
 
     # Parse the test config, and run single_run that many times
     commands = [make_command(test_num, run_num, platform) for run_num in range(test_config["num_runs"])]
-    procs = [Popen(i) for i in commands]
+    procs = [Popen(i, shell=True) for i in commands]
 
     for p in procs:
         p.wait()
