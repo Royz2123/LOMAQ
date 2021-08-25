@@ -1,4 +1,3 @@
-import main as single_test
 import yaml
 import time
 import sys
@@ -7,38 +6,26 @@ import collections
 import os
 import subprocess
 
-MULTI_MAIN_PATH = os.path.join(os.path.dirname(__file__), "config", "global", "multi_main.yaml")
-SUPER_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config", "global", "super_config.yaml")
+from multiprocessing import Process
 
-DEFAULT_PYTHON_NAME = "python37"
-DEFAULT_MAIN_NAME = "src/main_wandb.py"
-DEFAULT_PLOT_NAME = "src/plot.py"
+from main_util import *
+from main import single_run
 
-
-def recursive_dict_update(d, u):
-    for k, v in u.items():
-        if isinstance(v, collections.Mapping):
-            d[k] = recursive_dict_update(d.get(k, {}), v)
-        else:
-            d[k] = v
-    return d
+TESTS_PATH = os.path.join(os.path.dirname(__file__), "config", "tests")
+SUPER_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config", "super_config.yaml")
 
 
-def get_current_test_data(orig_dict, test_num, num_tests):
+def get_current_run_override_config(orig_dict, test_num, num_tests):
     # If this is still a dictionary, we need to go deeper for each new argument
     if type(orig_dict) == dict:
         single_dict = {}
         for k, v in orig_dict.items():
-            single_dict[k] = get_current_test_data(v, test_num, num_tests)
+            single_dict[k] = get_current_run_override_config(v, test_num, num_tests)
         return single_dict
 
-    # In this case, just assume constant value
-    elif type(orig_dict) == int:
-        return orig_dict
-
     elif type(orig_dict) == list:
-        # Assume [min, max]
-        if len(orig_dict) == 2:
+        # Assume [min, max] if ints
+        if len(orig_dict) == 2 and type(orig_dict[0]) == int and type(orig_dict[1]) == int:
             delta = orig_dict[1] - orig_dict[0]
             return orig_dict[0] + delta * (test_num / (num_tests - 1))
 
@@ -48,39 +35,43 @@ def get_current_test_data(orig_dict, test_num, num_tests):
         else:
             return orig_dict[test_num]
 
+    # In this case, just assume constant value
     else:
-        raise Exception(f"Unsupported type in {MULTI_MAIN_PATH}")
+        return orig_dict
 
 
 def main():
-    with open(MULTI_MAIN_PATH, "r") as f:
-        try:
-            multi_config = yaml.load(f)
-        except yaml.YAMLError as exc:
-            assert False, "default.yaml error: {}".format(exc)
+    # First try to see what test we're dealing with
+    params = deepcopy(sys.argv)
+    test_num = get_param(params, "--test-num")
 
-    num_tests = multi_config["num_tests"]
+    # If test num not specified, raise an error so we don't have any problems
+    if test_num is None:
+        raise Exception("Please specify a test_num")
 
-    for test_num in range(num_tests):
-        super_config = {}
-        for config_type in ["env_config", "alg_config"]:
-            if multi_config[config_type] is not None:
-                curr_dict = get_current_test_data(multi_config[config_type], test_num, num_tests)
-                super_config = recursive_dict_update(super_config, curr_dict)
+    # Now try to read the test and see if it's valid
+    test_config = get_config_dict(f"test{test_num}", "tests")
+    if test_config is None:
+        raise Exception("Invalid test_num, exiting...")
 
-        # Now we need to run the main with curr_config. Save under config global super_config
-        with open(SUPER_CONFIG_PATH, 'w') as f:
-            _ = yaml.dump(super_config, f)
+    # Parse the test config, and run single_run that many times
+    runs = []
+    for run_num in range(test_config["num_runs"]):
+        override_config = get_current_run_override_config(test_config["override"], run_num, test_config["num_runs"])
+        env_name = get_current_run_override_config(test_config["env_name"], run_num, test_config["num_runs"])
+        alg_name = get_current_run_override_config(test_config["alg_name"], run_num, test_config["num_runs"])
 
-        # Run main (will take args from the super config file)
-        subprocess.call([DEFAULT_PYTHON_NAME, DEFAULT_MAIN_NAME] + sys.argv[1:])
-        subprocess.call([DEFAULT_PYTHON_NAME, DEFAULT_PLOT_NAME] + sys.argv[1:])
+        # Run main
+        run_process = Process(target=single_run, args=(env_name, alg_name, override_config))
+        run_process.start()
+        runs.append(run_process)
 
-        # Destroy the super config file for later runs
-        os.remove(SUPER_CONFIG_PATH)
+    for run in runs:
+        run.join()
+
+    # single_run(env_name, alg_name, override_config)
 
 
 # This is a module who's goal is to run multiple test in one run
-# The arguments are
 if __name__ == '__main__':
     main()

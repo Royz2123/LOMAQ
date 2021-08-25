@@ -19,7 +19,7 @@ def merge(source, destination):
 
 
 class ExperimentLogger:
-    def __init__(self, env_name="default_env", exp_name=None, env_config={}, alg_configs={}):
+    def __init__(self, env_name="default_env", exp_name=None):
         # TODO: add seed to this thing
         self.exp_name = exp_name
         self.env_name = env_name
@@ -52,9 +52,6 @@ class ExperimentLogger:
         # list of learner path directories
         self.learners = {}
 
-        # document the config files
-        self.log_configs(env_config, alg_configs)
-
         # logging general runtime data, like parameters of the learners
         self.runtime_data = {
             "total parameters": {}
@@ -71,7 +68,7 @@ class ExperimentLogger:
         print("\n" * 10)
         self.log_config_file(fname, combined_data)
 
-    def log_configs(self, env_config, alg_configs):
+    def log_config(self, config):
         # create config folder
         self.config_path = f"{self.exp_path}config/"
         try:
@@ -79,12 +76,8 @@ class ExperimentLogger:
         except OSError as e:
             pass
 
-        # log environment config
-        self.log_config_file(f"{self.config_path}env_config.yaml", env_config)
-
-        # log algorithm config
-        for data in alg_configs:
-            self.log_config_file(f"{self.config_path}alg_config_{data['name']}.yaml", data)
+        # log config
+        self.log_config_file(f"{self.config_path}global_config.yaml", config)
 
     def log_config_file(self, fname, data):
         if len(data):

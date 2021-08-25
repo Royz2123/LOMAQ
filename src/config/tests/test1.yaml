@@ -2,18 +2,15 @@
 # Differs from the config files! watch out for collisions. This yaml triumphs in terms of collisions
 
 # number of tests to run (runs of main)
-num_tests: 3
+num_runs: 2
+env_name: multi_particle
+# alg_name: [local_qmix,qmix,iql_local,iql,qtran]
+alg_name: [local_qmix,qmix]
 
 # If an argument is in single value form - then it is constant throught all the runs
 # If an argument is in a list of length 2, then the program will assume a series of airthmetic progression [min, max]
 # If an argument is a list of any other length, then it must be of size "num_tests"
-
 # Argument name and heirarchy must exist in the config files
 
-env_config:
-  env_args:
-    num_cartpoles: [5, 10, 15]
-
-  t_max: [1000, 2000]
-
-alg_config:
+override:
+  human_mode: False
