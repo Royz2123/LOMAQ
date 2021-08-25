@@ -63,4 +63,4 @@ test_interval: 20000
 log_interval: 20000
 runner_log_interval: 500
 learner_log_interval: 500
-t_max: 2000000
+t_max: 2000
