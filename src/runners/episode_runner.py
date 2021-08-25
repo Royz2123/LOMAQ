@@ -144,7 +144,7 @@ class EpisodeRunner:
             # Save image array as video
             if not self.args.human_mode:
                 size = tuple(img_array[0].shape[:2])
-                out = cv2.VideoWriter('temp.mp4', cv2.VideoWriter_fourcc(*'MP4V'), 15, size)
+                out = cv2.VideoWriter('temp.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 15, size)
                 for i in range(len(img_array)):
                     out.write(img_array[i])
                 out.release()
