@@ -50,9 +50,10 @@ class MonotonicSubMixer(nn.Module):
         return self.agent_nbrhood
 
     def forward(self, mixed_utilities, states):
-        # Retriving only the relevant mixer nieghborhood
-        # TODO: Local state shit
+        # TODO: Local state shit only the relevant mixer nieghborhood
 
         # Running through the hypernetwork
-        q_i = self.network(mixed_utilities[:, :, self.mixer_index], states)
+        utility_input = mixed_utilities[:, :, self.mixer_index]
+        utility_input = th.reshape(utility_input, shape=(*utility_input.shape[:2], -1))
+        q_i = self.network(utility_input, states)
         return q_i
