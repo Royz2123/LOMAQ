@@ -33,7 +33,7 @@ class GraphQMixer(nn.Module):
             ))
 
         # Implement parameter sharing for sub_mixers
-        if getattr(args, "share_first_layer", False):
+        if args.share_first_layer:
             hyper_w_1 = self.sub_mixers[0].network.hyper_w_1
             hyper_b_1 = self.sub_mixers[0].network.hyper_b_1
 

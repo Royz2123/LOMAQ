@@ -18,8 +18,8 @@ class MonotonicGCN(nn.Module):
 
         self.layers = nn.ModuleList()
         for i in range(self.depth_k):
-            input_feature_size = 1 if i == 0 else getattr(args, "gnn_feature_size", 8)
-            output_feature_size = getattr(args, "gnn_feature_size", 8)
+            input_feature_size = 1 if i == 0 else args.gnn_feature_size
+            output_feature_size = args.gnn_feature_size
 
             self.layers.append(MonotonicGCNLayer(
                 args=args,

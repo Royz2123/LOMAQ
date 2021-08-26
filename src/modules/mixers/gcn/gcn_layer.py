@@ -15,28 +15,37 @@ class MonotonicGCNLayer(nn.Module):
         self.input_feature_size = input_feature_size
         self.output_feature_size = output_feature_size
 
+        # check if hypernetwork should be used
+        self.use_hyper_network = getattr(args, "gcn_use_hypernetwork", False)
+
         # Save adjacency matrix
         self.adj_matrix = adj_matrix
+
+        # Set global parameters
+        self.input_size = input_feature_size * self.n_agents
+        self.output_size = output_feature_size * self.n_agents
+        self.hidden_size = int((self.input_size + self.output_size) / 2)
 
         # breaking the MLP to hypernetworks for deriving the weights and biases
         # We will implement a small 2-layer network for every submixer
         # The dimensions will be (feature_size, sub_mixer_embed_dim, 1)
-        self.hyper_input_size = int(np.prod(args.state_shape))
-        self.input_size = input_feature_size * self.n_agents
-        self.output_size = output_feature_size * self.n_agents
-        self.hyper_hidden_size = getattr(args, "gcn_hypernet_hidden_size", 1)
-        self.hidden_size = int((self.input_size + self.output_size) / 2)
-        self.hyper_layers = getattr(args, "gcn_hypernet_layers", 1)
+        if self.use_hyper_network:
+            self.hyper_input_size = int(np.prod(args.state_shape))
+            self.hyper_hidden_size = args.gnn_hyper_hidden_size
+            self.hyper_layers = args.gnn_hyper_layers
 
-        self.network = HyperNetwork(
-            args,
-            self.hyper_input_size,
-            self.input_size,
-            self.hyper_hidden_size,
-            self.hidden_size,
-            self.output_size,
-            self.hyper_layers,
-        )
+            self.network = HyperNetwork(
+                args,
+                self.hyper_input_size,
+                self.input_size,
+                self.hyper_hidden_size,
+                self.hidden_size,
+                self.output_size,
+                self.hyper_layers,
+            )
+        else:
+            self.weight = nn.Parameter(th.randn((self.input_size, self.output_size)))
+            self.bias = nn.Parameter(th.zeros((self.output_size,)))
 
     def forward(self, input_features, states):
         # First, multiply the input_features with adj matrix
@@ -49,7 +58,11 @@ class MonotonicGCNLayer(nn.Module):
         features = th.reshape(features, shape=(
             *input_features.shape[:2], self.input_size)
         )
-        output_features = self.network(features, states)
+
+        if self.use_hyper_network:
+            output_features = self.network(features, states)
+        else:
+            output_features = th.matmul(features, th.abs(self.weight)) + self.bias
 
         # Return to original shape
         output_features = th.reshape(output_features, shape=(

@@ -14,7 +14,7 @@ class MonotonicSubMixer(nn.Module):
         super(MonotonicSubMixer, self).__init__()
 
         self.args = args
-        self.use_local_state = getattr(args, "submixer_use_local_state", True)
+        self.use_local_state = args.submixer_use_local_state
         self.depth_k = args.depth_k
 
         # We denote i as the mixer index, and mixer_neighborhood as the relevant indices of utilities. Note that
@@ -25,11 +25,11 @@ class MonotonicSubMixer(nn.Module):
         # We will implement a small 2-layer network for every submixer
         # The dimensions will be (feature_size, sub_mixer_embed_dim, 1)
         self.hyper_input_size = int(np.prod(args.state_shape))
-        self.input_size = getattr(args, "gnn_feature_size", 1) if self.depth_k else 1
-        self.hyper_hidden_size = getattr(args, "submixer_hypernet_hidden_size", 1)
-        self.hidden_size = getattr(args, "submixer_hidden_size", 1)
+        self.input_size = args.gnn_feature_size if self.depth_k else 1
+        self.hyper_hidden_size = args.submixer_hyper_hidden_size
+        self.hidden_size = args.submixer_hidden_size
         self.output_size = 1
-        self.hyper_layers = getattr(args, "submixer_hypernet_layers", 1)
+        self.hyper_layers = args.submixer_hypernet_layers
 
         self.network = HyperNetwork(
             args,
