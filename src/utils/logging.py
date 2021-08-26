@@ -31,8 +31,13 @@ class Logger:
         self.sacred_info = sacred_run_dict.info
         self.use_sacred = True
 
-    def setup_wandb(self, config):
+    def setup_wandb(self, config, run_name=None):
         self.wandb_run = wandb.init(project=f"Local-QMIX", config=config, reinit=True)
+
+        if run_name is not None:
+            self.wandb_run.name = run_name
+            self.wandb_run.save()
+
         self.use_wandb = True
 
     def new_run_wandb(self):

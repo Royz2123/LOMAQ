@@ -41,7 +41,7 @@ def main():
     env_name = get_current_run_override_config(test_config["env_name"], run_num, test_config["num_runs"])
     alg_name = get_current_run_override_config(test_config["alg_name"], run_num, test_config["num_runs"])
 
-    single_run(env_name, alg_name, override_config)
+    single_run(env_name, alg_name, override_config, test_num=test_num, run_num=run_num)
 
 
 # This is a module who's goal is to run multiple test in one run

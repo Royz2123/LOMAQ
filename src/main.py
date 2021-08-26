@@ -26,7 +26,14 @@ logger = get_logger()
 results_path = os.path.join(dirname(dirname(abspath(__file__))), "results")
 
 
-def single_run(env_name, alg_name, override_config=None):
+def run_name(env_name, alg_name, test_num, run_num):
+    name = f"{test_num}-" if test_num is not None else ""
+    name += f"{run_num}-" if run_num is not None else ""
+    name += f"{alg_name}-{env_name}"
+    return name
+
+
+def single_run(env_name, alg_name, override_config=None, test_num=None, run_num=None):
     # Load algorithm and env base configs
     default_config = get_config_dict("default")
     env_config = get_config_dict(env_name, "envs")
@@ -61,7 +68,7 @@ def single_run(env_name, alg_name, override_config=None):
     # setup logger and wandb
     logger_obj = Logger(logger)
     if not config_dict["human_mode"]:
-        logger_obj.setup_wandb(config=config_dict)
+        logger_obj.setup_wandb(config=config_dict, run_name=run_name(env_name, alg_name, test_num, run_num))
 
     # Run the current test
     run.run_sequential(args=SN(**config_dict), logger=logger_obj)
