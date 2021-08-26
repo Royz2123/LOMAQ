@@ -14,7 +14,7 @@ class MonotonicGCN(nn.Module):
 
         self.depth_k = int(self.args.depth_k)
         self.graph_obj = args.graph_obj
-        self.adj_matrix = th.tensor(self.graph_obj.get_adjacency_matrix())
+        self.adj_matrix = th.tensor(self.graph_obj.get_adjacency_matrix()).to(args.device)
 
         self.layers = nn.ModuleList()
         for i in range(self.depth_k):
