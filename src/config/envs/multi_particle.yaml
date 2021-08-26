@@ -17,7 +17,7 @@ env_args:
 
     graph:
       graph_type: "auto"            # can be either full, auto or empty
-      show_graph: True
+      show_graph: False
 
     # observation params - can either be "none", "closest", "local", "all"
     obs:
