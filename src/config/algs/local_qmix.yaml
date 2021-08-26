@@ -61,15 +61,15 @@ parameter_sharing: False
 use_gcn: True
 
 # Submixer params
-submixer_hypernet_hidden_size: 4
-submixer_hidden_size: 16
-submixer_hypernet_layers: 2
-share_first_layer: True
+submixer_hypernet_hidden_size: 16
+submixer_hidden_size: 32
+submixer_hypernet_layers: 1
+share_first_layer: False
 #submixer_use_local_state: True - NOT IMPLEMENTED...
 
 # GCN params
-gnn_feature_size: 4
-gcn_hypernet_hidden_size: 16
+gnn_feature_size: 8
+gcn_hypernet_hidden_size: 32
 gcn_hypernet_layers: 2
 
 

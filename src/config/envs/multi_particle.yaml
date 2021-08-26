@@ -39,11 +39,11 @@ env_args:
       use_grid: True
 
       # num of agents in every direction
-      num_x_agents: 20
+      num_x_agents: 5
       num_y_agents: 1
 
       # distances between the gridded agents
-      grid_dist_x: 0.45
+      grid_dist_x: 1.05
       grid_dist_y: 2.10
 
       # how much should the odd cols of agents be offsetted in the y direction
