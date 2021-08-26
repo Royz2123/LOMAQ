@@ -144,7 +144,7 @@ class QLearner:
             self.logger.log_stat("td_loss", td_loss.item(), t_env)
             self.logger.log_stat("opt_loss", opt_loss.item(), t_env)
             self.logger.log_stat("nopt_loss", nopt_loss.item(), t_env)
-            self.logger.log_stat("grad_norm", grad_norm, t_env)
+            self.logger.log_stat("grad_norm", grad_norm.clone().cpu().detach().numpy(), t_env)
             if self.args.mixer == "qtran_base":
                 mask_elems = mask.sum().item()
                 self.logger.log_stat("td_error_abs", (masked_td_error.abs().sum().item()/mask_elems), t_env)
@@ -160,7 +160,7 @@ class QLearner:
                     "t_env": t_env,
                     "loss": loss.item(),
                     "td_error": masked_td_error.abs().sum().item() / mask_elems,
-                    "grad_norm": grad_norm.clone().detach().numpy(),
+                    "grad_norm": grad_norm.clone().cpu().detach().numpy(),
                     "q_taken_mean": (chosen_action_qvals * mask).sum().item()/(mask_elems * self.args.n_agents),
                     "target_mean": ((masked_td_error).sum().item()/mask_elems)
                 }
