@@ -41,10 +41,6 @@ def single_run(env_name, alg_name, override_config=None, test_num=None, run_num=
     if override_config is None:
         override_config = dict()
 
-    print(env_name)
-    print(alg_name)
-    exit()
-
     # Load my Experiment Logger object for personal testing
     config_dict = default_config.copy()
     config_dict = recursive_dict_update(config_dict, env_config)
