@@ -10,7 +10,7 @@ import numpy as np
 import networkx as nx
 
 from gym import spaces
-
+import torch as th
 # import matplotlib
 # matplotlib.use('Agg')
 
@@ -189,7 +189,10 @@ class MultiParticleEnv(MultiAgentEnv):
         return neighbors_idxs
 
     def step(self, actions):
-        actions = actions.cpu().detach().numpy().tolist()
+        if th.is_tensor(actions):
+            actions = actions.cpu().detach().numpy().tolist()
+        else:
+            actions = actions.tolist()
         self.episode_steps += 1
         err_msg = "%r (%s) invalid" % (actions, type(actions))
         assert self.action_space.contains(actions), err_msg

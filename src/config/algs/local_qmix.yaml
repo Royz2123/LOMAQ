@@ -56,4 +56,21 @@ reward_clamp: False
 # parameter sharing for the subnet (only relevant for symmetric problems)
 parameter_sharing: False
 
+
+### GCN parameters
+use_gcn: True
+
+# Submixer params
+submixer_hypernet_hidden_size: 4
+submixer_hidden_size: 16
+submixer_hypernet_layers: 2
+share_first_layer: True
+#submixer_use_local_state: True - NOT IMPLEMENTED...
+
+# GCN params
+gnn_feature_size: 4
+gcn_hypernet_hidden_size: 16
+gcn_hypernet_layers: 2
+
+
 name: "local_qmix"

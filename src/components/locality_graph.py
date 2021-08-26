@@ -1,5 +1,6 @@
 import networkx as nx
 import itertools
+import numpy as np
 
 import matplotlib.pyplot as plt
 
@@ -21,6 +22,11 @@ class DependencyGraph:
 
         # compute the max degree of the graph
         self.max_deg = self.compute_graph_deg()
+
+    def get_adjacency_matrix(self):
+        A = nx.to_numpy_matrix(self.graph)
+        I = np.matrix(np.eye(A.shape[0]))
+        return np.float32(A + I)
 
     # Function that basically finds n_j
     def find_reward_groups(self, l=1, beta2=1):

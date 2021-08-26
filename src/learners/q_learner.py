@@ -5,6 +5,7 @@ from torch.optim import RMSprop
 import numpy as np
 
 from modules.mixers.local_qmix import LocalQMixer
+from modules.mixers.gcn.gcn_local_qmix import GraphQMixer
 from modules.mixers.vdn import VDNMixer
 from modules.mixers.qmix import QMixer
 
@@ -36,7 +37,10 @@ class QLearner:
             elif args.mixer == "qmix":
                 self.mixer = QMixer(args)
             elif args.mixer == "local_qmix":
-                self.mixer = LocalQMixer(args=args)
+                if getattr(args, "use_gcn", False):
+                    self.mixer = GraphQMixer(args=args)
+                else:
+                    self.mixer = LocalQMixer(args=args)
             else:
                 raise ValueError("Mixer {} not recognised.".format(args.mixer))
             self.params += list(self.mixer.parameters())
@@ -243,8 +247,8 @@ class QLearner:
         if self.mixer is not None:
             # Since we want to optimize the bellman equation, and the target refers to the
             # next state, we do this 1: , :-1 trim to the state batch
-            chosen_action_qvals = self.mixer(chosen_action_qvals, batch["state"][:, :-1])
-            target_max_qvals = self.target_mixer(target_max_qvals, batch["state"][:, 1:])
+            chosen_action_qvals = self.mixer(chosen_action_qvals, batch["state"][:, :-1], obs=batch["obs"][:, :-1])
+            target_max_qvals = self.target_mixer(target_max_qvals, batch["state"][:, 1:], obs=batch["obs"][:, 1:])
 
         # Shape debugging purposes
         # print(f"Target Max qvals: {target_max_qvals.shape}")

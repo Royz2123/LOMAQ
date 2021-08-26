@@ -3,7 +3,7 @@ env: multi_particle
 env_args:
   animation_speed: 0
   episode_limit: 50
-  num_agents: 2
+  num_agents: 5
   num_landmarks: 1
   rules:
     reward:
@@ -58,7 +58,7 @@ env_args:
       landmark_spawn_offset_y: 0
 
 test_greedy: True
-test_nepisode: 10
+test_nepisode: 1
 test_interval: 20000
 log_interval: 20000
 save_vid_interval: 100000

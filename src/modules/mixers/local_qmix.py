@@ -67,7 +67,7 @@ class LocalQMixer(nn.Module):
         else:
             return all_submixers[self.depth_k:-self.depth_k]
 
-    def forward(self, agent_qs, states):
+    def forward(self, agent_qs, states, obs=None):
         qs = []
         for idx, sub_mixer in enumerate(self.sub_mixers):
             # States shape is: [batch_size, max_ep_len, num_agents * state_size]

@@ -67,7 +67,7 @@ class QTranBase(nn.Module):
         else:
             assert False
 
-    def forward(self, batch, hidden_states, actions=None):
+    def forward(self, batch, hidden_states, actions=None, obs=None):
         bs = batch.batch_size
         ts = batch.max_seq_length
 
