@@ -18,4 +18,4 @@ fi
 
 echo "Running test for enviroment $env_name, with algorithm $alg_name"
 
-python3 src/main.py --env-config=$env_name --alg-config=$alg_name
+python3 src/main.py --env-name=$env_name --alg-name=$alg_name

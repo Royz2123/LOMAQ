@@ -41,6 +41,10 @@ def single_run(env_name, alg_name, override_config=None, test_num=None, run_num=
     if override_config is None:
         override_config = dict()
 
+    print(env_name)
+    print(alg_name)
+    exit()
+
     # Load my Experiment Logger object for personal testing
     config_dict = default_config.copy()
     config_dict = recursive_dict_update(config_dict, env_config)
@@ -88,10 +92,10 @@ def single_run(env_name, alg_name, override_config=None, test_num=None, run_num=
 def main():
     params = deepcopy(sys.argv)
 
-    env_config = get_param(params, "--env-config")
-    alg_config = get_param(params, "--alg-config")
+    env_name = get_param(params, "--env-name")
+    alg_name = get_param(params, "--alg-name")
 
-    single_run(env_config, alg_config)
+    single_run(env_name, alg_name)
 
 
 if __name__ == '__main__':
