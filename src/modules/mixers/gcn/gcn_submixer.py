@@ -15,6 +15,7 @@ class MonotonicSubMixer(nn.Module):
 
         self.args = args
         self.use_local_state = getattr(args, "submixer_use_local_state", True)
+        self.depth_k = args.depth_k
 
         # We denote i as the mixer index, and mixer_neighborhood as the relevant indices of utilities. Note that
         # mixer neighborhood is also exactly what we need for extracting S_Nik
@@ -24,7 +25,7 @@ class MonotonicSubMixer(nn.Module):
         # We will implement a small 2-layer network for every submixer
         # The dimensions will be (feature_size, sub_mixer_embed_dim, 1)
         self.hyper_input_size = int(np.prod(args.state_shape))
-        self.input_size = getattr(args, "gnn_feature_size", 1)
+        self.input_size = getattr(args, "gnn_feature_size", 1) if self.depth_k else 1
         self.hyper_hidden_size = getattr(args, "submixer_hypernet_hidden_size", 1)
         self.hidden_size = getattr(args, "submixer_hidden_size", 1)
         self.output_size = 1
