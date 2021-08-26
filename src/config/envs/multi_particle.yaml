@@ -17,7 +17,7 @@ env_args:
 
     graph:
       graph_type: "auto"            # can be either full, auto or empty
-      show_graph: False
+      show_graph: True
 
     # observation params - can either be "none", "closest", "local", "all"
     obs:
@@ -39,19 +39,19 @@ env_args:
       use_grid: True
 
       # num of agents in every direction
-      num_x_agents: 5
-      num_y_agents: 3
+      num_x_agents: 20
+      num_y_agents: 1
 
       # distances between the gridded agents
-      grid_dist_x: 1.05
+      grid_dist_x: 0.45
       grid_dist_y: 2.10
 
       # how much should the odd cols of agents be offsetted in the y direction
-      grid_offset: 1.05
+      grid_offset: 0
 
       # spawn radius for both the agents and the landmarks
       agent_spawn_radius: 0
-      landmark_spawn_radius: 0.9
+      landmark_spawn_radius: 1.0
 
       # Where should each landmark spawn relative to each agent?
       landmark_spawn_offset_x: 0
