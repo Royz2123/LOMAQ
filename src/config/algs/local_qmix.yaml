@@ -62,7 +62,7 @@ submixer_hypernet_hidden_size: 16
 submixer_hidden_size: 32
 submixer_hypernet_layers: 1
 share_first_layer: True
-depth_k: 0
+depth_k: 1
 #submixer_use_local_state: True - NOT IMPLEMENTED...
 
 # GCN params

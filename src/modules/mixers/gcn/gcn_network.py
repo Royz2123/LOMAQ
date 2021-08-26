@@ -31,5 +31,5 @@ class MonotonicGCN(nn.Module):
     def forward(self, input_features, states):
         x = input_features
         for i in range(len(self.layers)):
-            x = F.elu(self.layers[i](x, states))
+            x = F.relu(self.layers[i](x, states))
         return x

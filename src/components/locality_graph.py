@@ -1,6 +1,7 @@
 import networkx as nx
 import itertools
 import numpy as np
+from scipy.linalg import fractional_matrix_power
 
 import matplotlib.pyplot as plt
 
@@ -14,6 +15,9 @@ class DependencyGraph:
         if graph is None:
             self.graph = DependencyGraph.create_default_graph(num_agents)
 
+        # Create also a corresponding graph with self loops
+        self.graph_self_loops = self.create_self_loop_graph()
+
         # caching the neighborhoods. stored as double dict agent_index -> depth -> neighboring indicies
         self.cache = {}
         self.keep_cache = keep_cache
@@ -23,10 +27,33 @@ class DependencyGraph:
         # compute the max degree of the graph
         self.max_deg = self.compute_graph_deg()
 
-    def get_adjacency_matrix(self):
-        A = nx.to_numpy_matrix(self.graph)
-        I = np.matrix(np.eye(A.shape[0]))
-        return np.float32(A + I)
+    def create_self_loop_graph(self):
+        graph_self_loops = self.graph.copy()
+
+        self_loops = []
+        for i in range(self.graph.number_of_nodes()):
+            self_loops.append((i, i))
+
+        graph_self_loops.add_edges_from(self_loops)
+        return graph_self_loops
+
+    def get_adjacency_matrix(self, self_loops=True, normalize=True):
+        if self_loops:
+            adj_matrix = nx.to_numpy_matrix(self.graph_self_loops)
+        else:
+            adj_matrix = nx.to_numpy_matrix(self.graph)
+
+        if normalize:
+            d_half_norm = self.get_normalizing_diag()
+            adj_matrix = d_half_norm.dot(adj_matrix).dot(d_half_norm)
+
+        return np.float32(adj_matrix)
+
+    def get_normalizing_diag(self, power=-0.5):
+        deg_matrix = self.graph_self_loops.degree()
+        diag_deg_matrix = np.diag([deg for (n, deg) in list(deg_matrix)])
+        diag_deg_matrix_inv = fractional_matrix_power(diag_deg_matrix, power)
+        return diag_deg_matrix_inv
 
     # Function that basically finds n_j
     def find_reward_groups(self, l=1, beta2=1):
