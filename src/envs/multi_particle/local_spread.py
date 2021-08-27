@@ -135,27 +135,34 @@ class LocalSpreadScenario(BaseScenario):
             grid_dist_y = self.params["rules"]["grid"]["grid_dist_y"]
 
             # add offset to the grid if necessary
-            base_pos = np.array([x_idx * grid_dist_x, y_idx * grid_dist_y])
-            base_pos[1] += self.params["rules"]["grid"]["grid_offset"] * (x_idx % 2 == 1)
+            bound_center_pos = np.array([x_idx * grid_dist_x, y_idx * grid_dist_y])
+            bound_center_pos[1] += self.params["rules"]["grid"]["grid_offset"] * (x_idx % 2 == 1)
+
+            entity_base_pos = bound_center_pos.copy()
 
             if is_landmark:
-                base_pos += np.array([
+                entity_base_pos += np.array([
                     self.params["rules"]["grid"]["landmark_spawn_offset_x"],
                     self.params["rules"]["grid"]["landmark_spawn_offset_y"],
                 ])
                 spawn_rad = self.params["rules"]["grid"]["landmark_spawn_radius"]
             else:
+                entity_base_pos += np.array([
+                    self.params["rules"]["grid"]["agent_spawn_offset_x"],
+                    self.params["rules"]["grid"]["agent_spawn_offset_y"],
+                ])
                 spawn_rad = self.params["rules"]["grid"]["agent_spawn_radius"]
 
         else:
-            base_pos = np.zeros(shape=(world.dim_p,))
+            bound_center_pos = np.zeros(shape=(world.dim_p,))
+            entity_base_pos = bound_center_pos.copy()
             spawn_rad = 1
 
         # set initial pos for agents only
         if not is_landmark:
-            world.agents[entity_idx].initial_pos = base_pos
+            world.agents[entity_idx].initial_pos = bound_center_pos
 
-        return base_pos + np.random.uniform(-spawn_rad, +spawn_rad, world.dim_p)
+        return entity_base_pos + np.random.uniform(-spawn_rad, +spawn_rad, world.dim_p)
 
     def benchmark_data(self, agent, world):
         rew = 0
