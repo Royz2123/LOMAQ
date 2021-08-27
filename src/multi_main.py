@@ -41,7 +41,11 @@ def main():
 
     # Parse the test config, and run single_run that many times
     commands = [make_command(test_num, run_num, platform) for run_num in range(test_config["num_runs"])]
-    procs = [Popen(i, shell=True) for i in commands]
+
+    procs = []
+    for i in commands:
+        procs.append(Popen(i, shell=True))
+        time.sleep(5)
 
     for p in procs:
         p.wait()
