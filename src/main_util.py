@@ -55,6 +55,14 @@ def config_copy(config):
         return deepcopy(config)
 
 
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
 def get_current_run_override_config(orig_dict, test_num, num_tests):
     # If this is still a dictionary, we need to go deeper for each new argument
     if type(orig_dict) == dict:
@@ -65,7 +73,7 @@ def get_current_run_override_config(orig_dict, test_num, num_tests):
 
     elif type(orig_dict) == list:
         # Assume [min, max] if ints
-        if len(orig_dict) == 2 and type(orig_dict[0]) == int and type(orig_dict[1]) == int:
+        if len(orig_dict) == 2 and is_number(orig_dict[0]) and is_number(orig_dict[1]):
             delta = orig_dict[1] - orig_dict[0]
             return orig_dict[0] + delta * (test_num / (num_tests - 1))
 
