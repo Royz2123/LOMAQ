@@ -26,11 +26,6 @@ import reward_decomposition.decompose as decompose
 from reward_decomposition.decomposer import RewardDecomposer
 
 
-def get_freer_gpu():
-    os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free >tmp')
-    memory_available = [int(x.split()[2]) for x in open('tmp', 'r').readlines()]
-    print(memory_available)
-    return np.argmax(memory_available)
 
 
 def run(_run, _config, _log):
@@ -40,14 +35,7 @@ def run(_run, _config, _log):
     args = SN(**_config)
 
     # configure which device, attempting to use freest gpu available
-    args.device =  "cpu"
-    if args.use_cuda:
-        try:
-            args.device = f"cuda:{get_freer_gpu()}"
-        except Exception as e:
-            print(f"Resorting to default cuda device, {e}")
-            args.device = "cuda"
-    exit()
+    args.device = "cuda" if args.use_cuda else "cpu"
 
     # setup loggers
     logger = Logger(_log)

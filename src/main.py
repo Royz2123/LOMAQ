@@ -33,6 +33,13 @@ def run_name(env_name, alg_name, test_num, run_num):
     return name
 
 
+def get_freer_gpu():
+    os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free >tmp')
+    memory_available = [int(x.split()[2]) for x in open('tmp', 'r').readlines()]
+    print(memory_available)
+    return np.argmax(memory_available)
+
+
 def single_run(env_name, alg_name, override_config=None, test_num=None, run_num=None):
     # Load algorithm and env base configs
     default_config = get_config_dict("default")
@@ -63,7 +70,16 @@ def single_run(env_name, alg_name, override_config=None, test_num=None, run_num=
     # config['env_args']['seed'] = config["seed"]
 
     config_dict = run.args_sanity_check(config_dict, logger)
-    config_dict["device"] = "cuda" if config_dict["use_cuda"] else "cpu"
+
+    # Set device for this experiment
+    config_dict["device"] = "cpu"
+    if config_dict["use_cuda"]:
+        try:
+            config_dict["device"] = f"cuda:{get_freer_gpu()}"
+        except Exception as e:
+            print(f"Resorting to default cuda device, {e}")
+            config_dict["device"] = "cuda"
+    exit()
 
     # setup logger and wandb
     logger_obj = Logger(logger)
