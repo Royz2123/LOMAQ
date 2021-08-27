@@ -36,7 +36,6 @@ def run_name(env_name, alg_name, test_num, run_num):
 def get_freer_gpu():
     os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free >tmp')
     memory_available = [int(x.split()[2]) for x in open('tmp', 'r').readlines()]
-    print(memory_available)
     return np.argmax(memory_available)
 
 
@@ -79,7 +78,7 @@ def single_run(env_name, alg_name, override_config=None, test_num=None, run_num=
         except Exception as e:
             print(f"Resorting to default cuda device, {e}")
             config_dict["device"] = "cuda"
-    exit()
+    print(f"Running the test on device: {config_dict['device']}")
 
     # setup logger and wandb
     logger_obj = Logger(logger)
