@@ -35,8 +35,8 @@ override:
         grid_offset: 0
 
         # spawn radius for both the agents and the landmarks
-        agent_spawn_radius: 0.3
-        landmark_spawn_radius: 0.2
+        agent_spawn_radius: 0.2
+        landmark_spawn_radius: 0.1
 
         # Where should each landmark spawn relative to it's bound center?
         landmark_spawn_offset_x: -0.9

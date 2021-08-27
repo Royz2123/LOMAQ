@@ -24,7 +24,7 @@ class LocalSpreadScenario(BaseScenario):
             agent.id = i
             agent.collide = True
             agent.silent = True
-            agent.size = 0.05
+            agent.size = self.params["rules"]["reward"]["agent_radius"]
 
         # add landmarks
         world.landmarks = [Landmark() for _ in range(self.params["num_landmarks"])]
