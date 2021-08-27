@@ -72,22 +72,22 @@ class LocalSpreadScenario(BaseScenario):
 
         # set all landmark rewards
         for landmark_idx, landmark in enumerate(world.landmarks):
-            # compute all of the agents that are close enough
-            viable_agents = [agent for agent in world.agents if LocalSpreadScenario.is_collision(agent, landmark)]
-
-            # Are there any agents on the landmark. If not, continue
-            if len(viable_agents) == 0:
-                continue
-
             # If reward is shared between agents, disregard occupants (irrelevant)
             if self.params["rules"]["reward"]["landmark_occupant_reward"] == "shared":
+                # compute all of the agents that are close enough
+                viable_agents = [agent for agent in world.agents if LocalSpreadScenario.is_collision(agent, landmark)]
+
+                # Are there any agents on the landmark. If not, continue
+                if len(viable_agents) == 0:
+                    continue
+
                 for agent in viable_agents:
                     rewards[agent.id] += coeff / len(viable_agents)
 
             # Or if reward is based on distance, also disregard occupants (irrelevant)
             elif self.params["rules"]["reward"]["landmark_occupant_reward"] == "closest":
-                agent_dists = [np.sqrt(np.sum(np.square(a.state.p_pos - landmark.state.p_pos))) for a in viable_agents]
-                closest_agent = viable_agents[np.argmin(agent_dists)]
+                agent_dists = [np.sqrt(np.sum(np.square(a.state.p_pos - landmark.state.p_pos))) for a in world.agents]
+                closest_agent = world.agents[np.argmin(agent_dists)]
                 rewards[closest_agent.id] += coeff
 
             else:
