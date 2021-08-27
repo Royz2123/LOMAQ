@@ -8,7 +8,7 @@ env_args:
   rules:
     reward:
       landmark_radius: 0.1
-      agent_radius: 0.2
+      agent_radius: 0.15
 
       # What is the price for a collision? shared between colliding agents
       collisions_reward: 0.0
