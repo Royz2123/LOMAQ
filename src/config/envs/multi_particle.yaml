@@ -26,10 +26,13 @@ env_args:
       graph_type: "auto"            # can be either full, auto or empty
       show_graph: False
 
-    # observation params - can either be "none", "closest", "local", "all"
     obs:
+      # observation params - can either be "none", "count", "closest", "local", "all"
       landmarks: "local"
       agents: "none"
+
+      # If the current agent is on a landmark, then how many agents are on there with him?
+      show_num_agents_on_landmark: True
 
       # In the local landmarks case, we will give the k closest landmarks. By default, k will be the max_deg + 1 of the
       # graph if None, otherwise the number specified.

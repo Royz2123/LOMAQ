@@ -227,7 +227,7 @@ class LocalSpreadScenario(BaseScenario):
         top_range = agent.initial_pos + agent.bound_dist
         return [bottom_range[0], top_range[0]], [bottom_range[1], top_range[1]]
 
-    def observation(self, agent, world, graph_obj=None):
+    def observation(self, curr_agent, world, graph_obj=None):
         # get positions of all entities in this agent's reference frame
         entity_pos = []
 
@@ -247,7 +247,7 @@ class LocalSpreadScenario(BaseScenario):
                         entity_type == "agents" and self.params["num_landmarks"] > 1
                         or entity_type == "landmarks" and self.params["num_landmarks"] > 0
                 ):
-                    obs_list = LocalSpreadScenario.get_closest_relative_position(all_entities, agent)
+                    obs_list = LocalSpreadScenario.get_closest_relative_position(all_entities, curr_agent)
             elif obs_type == "local":
                 # local is the most difficult out of these, since not all agents are exactly homogenous, and this
                 # creates a difference in the local observations. Not only is non-parameter sharing not implemented
@@ -266,14 +266,14 @@ class LocalSpreadScenario(BaseScenario):
                 if entity_type == "agents":
                     # First, add the agents that are neighbors. Should be from cache so no problem about order
                     # Note - nbrs_idx contains also agent.id - shouldnt be accounted for in #nbrs
-                    nbrs_idx = graph_obj.get_nbrhood(agent_index=agent.id)
+                    nbrs_idx = graph_obj.get_nbrhood(agent_index=curr_agent.id)
                     nbrs_agents = [agent for agent in all_entities if agent.id in nbrs_idx]
-                    nbrs_pos = LocalSpreadScenario.get_all_relative_positions(nbrs_agents, agent)
+                    nbrs_pos = LocalSpreadScenario.get_all_relative_positions(nbrs_agents, curr_agent)
 
                     # Pad the rest of the observation with the next closest agents
                     num_padding_agents = graph_obj.max_deg - len(nbrs_pos)
                     rest_agents = [agent for agent in all_entities if agent.id not in nbrs_idx]
-                    rest_pos = LocalSpreadScenario.get_all_relative_positions(rest_agents, agent)
+                    rest_pos = LocalSpreadScenario.get_all_relative_positions(rest_agents, curr_agent)
                     rest_pos = sorted(rest_pos, key=lambda x: np.linalg.norm(x))
                     rest_pos = rest_pos[:num_padding_agents]
 
@@ -286,7 +286,7 @@ class LocalSpreadScenario(BaseScenario):
                         num_obs_landmarks = min(self.params["num_landmarks"], graph_obj.max_deg + 1)
 
                     # First, find the landmarks that are reachable for this agent
-                    agent_ranges = LocalSpreadScenario.get_agent_ranges(agent)
+                    agent_ranges = LocalSpreadScenario.get_agent_ranges(curr_agent)
                     reachable_landmarks = [
                         lndmrk for lndmrk in all_entities
                         if (
@@ -294,13 +294,13 @@ class LocalSpreadScenario(BaseScenario):
                                 and LocalSpreadScenario.in_range(lndmrk.state.p_pos[1], agent_ranges[1])
                         )
                     ]
-                    reachable_pos = LocalSpreadScenario.get_all_relative_positions(reachable_landmarks, agent)
+                    reachable_pos = LocalSpreadScenario.get_all_relative_positions(reachable_landmarks, curr_agent)
                     reachable_pos = reachable_pos[:num_obs_landmarks]
 
                     # Pad the rest of the observation with the next closest agents
                     num_padding_landmarks = max(0, num_obs_landmarks - len(reachable_pos))
                     rest_landmarks = [landmark for landmark in all_entities if landmark not in reachable_landmarks]
-                    rest_pos = LocalSpreadScenario.get_all_relative_positions(rest_landmarks, agent)
+                    rest_pos = LocalSpreadScenario.get_all_relative_positions(rest_landmarks, curr_agent)
                     rest_pos = sorted(rest_pos, key=lambda x: np.linalg.norm(x))
                     rest_pos = rest_pos[:num_padding_landmarks]
 
@@ -310,7 +310,7 @@ class LocalSpreadScenario(BaseScenario):
                     obs_list = reachable_pos + rest_pos
 
             elif obs_type == "all":
-                obs_list = LocalSpreadScenario.get_all_relative_positions(all_entities, agent)
+                obs_list = LocalSpreadScenario.get_all_relative_positions(all_entities, curr_agent)
             else:
                 raise Exception(f"Unsupported observation type: {obs_type}")
 
@@ -320,7 +320,20 @@ class LocalSpreadScenario(BaseScenario):
 
             entity_pos += obs_list
 
-        return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos)
+        # Add a count of how many agents currently occupy the landmark
+        if self.params["rules"]["obs"]["show_num_agents_on_landmark"]:
+            # Compute the num of landmarks current agent occupies, and the total number of agent (including this one
+            total_occupants = 0
+            for landmark_idx, landmark in enumerate(world.landmarks):
+                # compute all of the agents that are close enough
+                agents = [agent for agent in world.agents if LocalSpreadScenario.is_collision(agent, landmark)]
+                if curr_agent in agents:
+                    if total_occupants == 0:
+                        total_occupants = 1
+                    total_occupants += len(agents) - 1
+            entity_pos += [np.array([total_occupants])]
+
+        return np.concatenate([curr_agent.state.p_vel] + [curr_agent.state.p_pos] + entity_pos)
 
     # returns the global state - landmarks and agents
     def state(self, world):
