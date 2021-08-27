@@ -2,9 +2,9 @@
 # Differs from the config files! watch out for collisions. This yaml triumphs in terms of collisions
 
 # number of tests to run (runs of main)
-num_runs: 2
+num_runs: 5
 env_name: multi_particle
-alg_name: [iql_local,local_qmix]
+alg_name: [local_qmix,qmix,iql_local,iql,qtran]
 
 # If an argument is in single value form - then it is constant throught all the runs
 # If an argument is in a list of length 2, then the program will assume a series of airthmetic progression [min, max]
@@ -42,6 +42,6 @@ override:
         landmark_spawn_offset_y: 0
 
         # Where should each agent spawn relative to it's bound center?
-        agent_spawn_offset_x: 0.7
+        agent_spawn_offset_x: 0.6
         agent_spawn_offset_y: 0
 
