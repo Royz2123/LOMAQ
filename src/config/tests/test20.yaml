@@ -14,10 +14,12 @@ alg_name: local_qmix
 override:
   # Things that tend to get change in the local machine, just override
   test_nepisode: 10
-  human_mode: False
+  human_mode: True
 
   # The real changes
   epsilon_anneal_time: 300000
+  epsilon_finish: 0.1
+
   env_args:
     rules:
       grid:
@@ -40,7 +42,7 @@ override:
 
         # Where should each landmark spawn relative to it's bound center?
         landmark_spawn_offset_x: -0.9
-        landmark_spawn_offset_y: 0
+        landmark_spawn_offset_y: 0.5
 
         # Where should each agent spawn relative to it's bound center?
         agent_spawn_offset_x: [-0.2, 0.6]
