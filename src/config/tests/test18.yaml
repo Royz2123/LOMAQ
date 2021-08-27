@@ -40,7 +40,7 @@ override:
 
         # Where should each landmark spawn relative to it's bound center?
         landmark_spawn_offset_x: -0.9
-        landmark_spawn_offset_y: 0
+        landmark_spawn_offset_y: 0.5
 
         # Where should each agent spawn relative to it's bound center?
         agent_spawn_offset_x: [-0.2, 0.6]
