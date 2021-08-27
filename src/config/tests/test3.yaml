@@ -12,6 +12,7 @@ alg_name: local_qmix
 # Argument name and heirarchy must exist in the config files
 
 override:
+  test_nepisode: 10
   human_mode: False
   depth_k: [0, 1]
   share_first_layer: False
