@@ -36,7 +36,7 @@ def run_name(env_name, alg_name, test_num, run_num):
 def get_freer_gpu():
     os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free >tmp')
     memory_available = [int(x.split()[2]) for x in open('tmp', 'r').readlines()]
-    return np.argmax(memory_available)
+    return int(np.argmax(memory_available))
 
 
 def single_run(env_name, alg_name, override_config=None, test_num=None, run_num=None):
@@ -74,7 +74,9 @@ def single_run(env_name, alg_name, override_config=None, test_num=None, run_num=
     config_dict["device"] = "cpu"
     if config_dict["use_cuda"]:
         try:
-            config_dict["device"] = f"cuda:{get_freer_gpu()}"
+            free_gpu_id = get_freer_gpu()
+            config_dict["device"] = f"cuda:{free_gpu_id}"
+            th.cuda.set_device(free_gpu_id)
         except Exception as e:
             print(f"Resorting to default cuda device, {e}")
             config_dict["device"] = "cuda"
