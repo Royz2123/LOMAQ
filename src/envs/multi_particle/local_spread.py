@@ -62,6 +62,10 @@ class LocalSpreadScenario(BaseScenario):
             landmark.state.p_pos = self.generate_location(world, landmark_idx, is_landmark=True)
             landmark.state.p_vel = np.zeros(world.dim_p)
 
+        # Re-eorder landmarks if necessary
+        if self.params["rules"]["obs"]["obs_landmarks_order"] == "random":
+            random.shuffle(world.landmarks)
+
     def compute_occupant_rewards(self, world):
         rewards = np.zeros(self.params["num_agents"])
         coeff = self.params["rules"]["reward"]["landmark_occupant_coeff"]
@@ -299,16 +303,19 @@ class LocalSpreadScenario(BaseScenario):
                     rest_pos = sorted(rest_pos, key=lambda x: np.linalg.norm(x))
                     rest_pos = rest_pos[:num_padding_landmarks]
 
-                    lndmrks_pos = reachable_pos + rest_pos
-                    lndmrks_dist = np.array([np.sqrt(np.sum(np.square(pos))) for pos in lndmrks_pos])
+                    # lndmrks_dist = np.array([np.sqrt(np.sum(np.square(pos))) for pos in lndmrks_pos])
 
                     # trying to add the relative distnace of the landmark
-                    obs_list = reachable_pos + rest_pos + [lndmrks_dist]
+                    obs_list = reachable_pos + rest_pos
 
             elif obs_type == "all":
                 obs_list = LocalSpreadScenario.get_all_relative_positions(all_entities, agent)
             else:
                 raise Exception(f"Unsupported observation type: {obs_type}")
+
+            # Re-eorder landmarks if necessary
+            if entity_type == "landmarks" and self.params["rules"]["obs"]["obs_landmarks_order"] == "sorted":
+                obs_list = sorted(obs_list, key=lambda x: np.linalg.norm(x))
 
             entity_pos += obs_list
 

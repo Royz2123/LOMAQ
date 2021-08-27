@@ -34,6 +34,12 @@ env_args:
       # graph if None, otherwise the number specified.
       landmark_k: null
 
+      # Order in which landmarks are observed, can be either "constant", "random", or "sorted"
+      obs_landmarks_order: "random"
+
+      # Should distance from landmarks be observed
+#      obs_landmarks_dists: True
+
     # bounding params
     bounding:
       is_bound: True

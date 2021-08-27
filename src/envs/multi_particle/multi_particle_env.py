@@ -72,7 +72,6 @@ class MultiParticleEnv(MultiAgentEnv):
         self.exp_logger = exp_logger
         self.episode_data = []
 
-        # wait until all cartpoles are done?
         self.last_reward = -1
         self.reward_label = None
 
