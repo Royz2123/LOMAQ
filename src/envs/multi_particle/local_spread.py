@@ -107,7 +107,7 @@ class LocalSpreadScenario(BaseScenario):
                 ])
             elif self.params["rules"]["reward"]["landmark_bonus_reward"] == "continuous":
                 dists = [np.sqrt(np.sum(np.square(a.state.p_pos - landmark.state.p_pos))) for a in world.agents]
-                bonus_reward = self.distance_to_reward(np.array(dists))
+                bonus_reward = np.array([self.distance_to_reward(dist) for dist in dists])
             else:
                 raise Exception("Unrecognized Landmark Bonus Reward Type, exiting...")
             rewards += self.params["rules"]["reward"]["landmark_bonus_coeff"] * bonus_reward
