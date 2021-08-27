@@ -4,7 +4,7 @@
 # number of tests to run (runs of main)
 num_runs: 2
 env_name: multi_particle
-alg_name: local_qmix
+alg_name: iql_local
 
 # If an argument is in single value form - then it is constant throught all the runs
 # If an argument is in a list of length 2, then the program will assume a series of airthmetic progression [min, max]
@@ -12,11 +12,17 @@ alg_name: local_qmix
 # Argument name and heirarchy must exist in the config files
 
 override:
+  # Things that tend to get change in the local machine, just override
   test_nepisode: 10
-
   human_mode: False
-  depth_k: [0, 1]
-  share_first_layer: True
-  use_hyper_network: True
+
+  # The real changes
+  env_args:
+    rules:
+      reward:
+        landmark_radius: 0.1
+
+        collisions_reward: [0.0, 0.0, -0.5, -0.5]
+        landmark_occupant_reward: ["shared", "closest", "shared", "closest"]
 
 

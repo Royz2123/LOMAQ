@@ -1,4 +1,6 @@
 import numpy as np
+import random
+
 from envs.multi_particle.multiagent_particle_env.multiagent.core import World, Agent, Landmark
 from envs.multi_particle.multiagent_particle_env.multiagent.scenario import BaseScenario
 
@@ -22,7 +24,7 @@ class LocalSpreadScenario(BaseScenario):
             agent.id = i
             agent.collide = True
             agent.silent = True
-            agent.size = 0.15
+            agent.size = 0.05
 
         # add landmarks
         world.landmarks = [Landmark() for _ in range(self.params["num_landmarks"])]
@@ -59,6 +61,71 @@ class LocalSpreadScenario(BaseScenario):
         for landmark_idx, landmark in enumerate(world.landmarks):
             landmark.state.p_pos = self.generate_location(world, landmark_idx, is_landmark=True)
             landmark.state.p_vel = np.zeros(world.dim_p)
+
+    def compute_occupant_rewards(self, world):
+        rewards = np.zeros(self.params["num_agents"])
+        coeff = self.params["rules"]["reward"]["landmark_occupant_coeff"]
+
+        # set all landmark rewards
+        for landmark_idx, landmark in enumerate(world.landmarks):
+            # compute all of the agents that are close enough
+            viable_agents = [agent for agent in world.agents if LocalSpreadScenario.is_collision(agent, landmark)]
+
+            # Are there any agents on the landmark. If not, continue
+            if len(viable_agents) == 0:
+                continue
+
+            # If reward is shared between agents, disregard occupants (irrelevant)
+            if self.params["rules"]["reward"]["landmark_occupant_reward"] == "shared":
+                for agent in viable_agents:
+                    rewards[agent.id] += coeff / len(viable_agents)
+
+            # Or if reward is based on distance, also disregard occupants (irrelevant)
+            elif self.params["rules"]["reward"]["landmark_occupant_reward"] == "closest":
+                agent_dists = [np.sqrt(np.sum(np.square(a.state.p_pos - landmark.state.p_pos))) for a in viable_agents]
+                closest_agent = viable_agents[np.argmin(agent_dists)]
+                rewards[closest_agent.id] += coeff
+
+            else:
+                raise Exception("Unrecognized Landmark Occupants Reward Type, exiting...")
+        return rewards
+
+    # We reveal here a possible variant for local rewards that should be learnt by the decomposition
+    def compute_bonus_rewards(self, world):
+        rewards = np.zeros(self.params["num_agents"])
+
+        for landmark in world.landmarks:
+            if self.params["rules"]["reward"]["landmark_bonus_reward"] == "binary":
+                bonus_reward = np.array([
+                    LocalSpreadScenario.is_collision(agent, landmark)
+                    for agent in world.agents
+                ])
+            elif self.params["rules"]["reward"]["landmark_bonus_reward"] == "continuous":
+                dists = [np.sqrt(np.sum(np.square(a.state.p_pos - landmark.state.p_pos))) for a in world.agents]
+                bonus_reward = self.distance_to_reward(np.array(dists))
+            else:
+                raise Exception("Unrecognized Landmark Bonus Reward Type, exiting...")
+            rewards += self.params["rules"]["reward"]["landmark_bonus_coeff"] * bonus_reward
+        return rewards
+
+    def compute_collision_rewards(self, world):
+        rewards = np.zeros(self.params["num_agents"])
+
+        if self.params["rules"]["reward"]["collisions_reward"] != 0:
+            collide_reward = self.params["rules"]["reward"]["collisions_reward"]
+            for i in range(self.params["num_agents"]):
+                for j in range(i + 1, self.params["num_agents"]):
+                    # punish them both equally
+                    if LocalSpreadScenario.is_collision(world.agents[i], world.agents[j]):
+                        rewards[i] += collide_reward / 2
+                        rewards[j] += collide_reward / 2
+        return rewards
+
+    def compute_all_rewards(self, world):
+        local_rewards = self.compute_occupant_rewards(world)
+        local_rewards += self.compute_bonus_rewards(world)
+        local_rewards += self.compute_collision_rewards(world)
+        return local_rewards
 
     def generate_location(self, world, entity_idx, is_landmark=False):
         if self.params["rules"]["grid"]["use_grid"]:
@@ -113,54 +180,6 @@ class LocalSpreadScenario(BaseScenario):
         normalizing_const = self.params["rules"]["reward"]["landmark_radius"]
         return normalizing_const / (normalizing_const + dist)
 
-    # compute the global reward
-    # We reveal here a possible variant for local ewards that should be learnt by the decomposition
-    def compute_all_rewards(self, world):
-        rewards = np.zeros(self.params["num_agents"])
-
-        # set all landmark rewards
-        for landmark in world.landmarks:
-            # compute all the distances
-            dists = [np.sqrt(np.sum(np.square(a.state.p_pos - landmark.state.p_pos))) for a in world.agents]
-
-            closest_agent = np.argmin(dists)
-            closest_dist = min(dists)
-
-            # Add the main landmark reward
-            if LocalSpreadScenario.is_collision(world.agents[closest_agent], landmark):
-                if self.params["rules"]["reward"]["landmark_closest_reward"] == "binary":
-                    rewards[closest_agent] += 1.0
-                elif self.params["rules"]["reward"]["landmark_closest_reward"] == "continuous":
-                    rewards[closest_agent] += self.distance_to_reward(closest_dist)
-                elif self.params["rules"]["reward"]["landmark_closest_reward"] == "none":
-                    pass
-                else:
-                    raise Exception("Unrecognized Landmark Reward Type, exiting...")
-
-            # add the bonus reward for every agent
-            if self.params["rules"]["reward"]["landmark_bonus_reward"] == "binary":
-                bonus_reward = np.array([
-                    LocalSpreadScenario.is_collision(agent, landmark)
-                    for agent in world.agents
-                ])
-            elif self.params["rules"]["reward"]["landmark_bonus_reward"] == "continuous":
-                bonus_reward = self.distance_to_reward(np.array(dists))
-            elif self.params["rules"]["reward"]["landmark_bonus_reward"] == "none":
-                bonus_reward = 0
-            else:
-                raise Exception("Unrecognized Landmark Reward Type, exiting...")
-            rewards += self.params["rules"]["reward"]["landmark_bonus_coeff"] * bonus_reward
-
-        # set collision rewards
-        if self.params["rules"]["reward"]["collisions_reward"]:
-            for i in range(self.params["num_agents"]):
-                for j in range(i + 1, self.params["num_agents"]):
-                    # punish them both equally
-                    if LocalSpreadScenario.is_collision(world.agents[i], world.agents[j]):
-                        rewards[i] -= 0.5
-                        rewards[j] -= 0.5
-        return rewards
-
     @staticmethod
     def is_collision(agent1, agent2):
         delta_pos = agent1.state.p_pos - agent2.state.p_pos
@@ -213,8 +232,8 @@ class LocalSpreadScenario(BaseScenario):
                 obs_list = []
             elif obs_type == "closest":
                 if (
-                    entity_type == "agents" and self.params["num_landmarks"] > 1
-                    or entity_type == "landmarks" and self.params["num_landmarks"] > 0
+                        entity_type == "agents" and self.params["num_landmarks"] > 1
+                        or entity_type == "landmarks" and self.params["num_landmarks"] > 0
                 ):
                     obs_list = LocalSpreadScenario.get_closest_relative_position(all_entities, agent)
             elif obs_type == "local":
@@ -259,8 +278,8 @@ class LocalSpreadScenario(BaseScenario):
                     reachable_landmarks = [
                         lndmrk for lndmrk in all_entities
                         if (
-                            LocalSpreadScenario.in_range(lndmrk.state.p_pos[0], agent_ranges[0])
-                            and LocalSpreadScenario.in_range(lndmrk.state.p_pos[1], agent_ranges[1])
+                                LocalSpreadScenario.in_range(lndmrk.state.p_pos[0], agent_ranges[0])
+                                and LocalSpreadScenario.in_range(lndmrk.state.p_pos[1], agent_ranges[1])
                         )
                     ]
                     reachable_pos = LocalSpreadScenario.get_all_relative_positions(reachable_landmarks, agent)

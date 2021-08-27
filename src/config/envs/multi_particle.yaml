@@ -8,12 +8,18 @@ env_args:
   rules:
     reward:
       landmark_radius: 0.1
-      collisions_reward: False
 
-      # landmark reward_type, can be either "none", "binary", "continuous"
-      landmark_closest_reward: "binary"
-      landmark_bonus_reward: "none"
-      landmark_bonus_coeff: 0.0
+      # What is the price for a collision? shared between colliding agents
+      collisions_reward: 0.0
+
+      # landmark bonus reward type, can be either "binary", "continuous"
+      landmark_bonus_reward: "continuous"
+      landmark_bonus_coeff: 0.01
+
+      # If enviroment offers local rewards, how should the occupant reward be exhbited?
+      # can be either "first", "shared" or "closest"
+      landmark_occupant_reward: "shared"
+      landmark_occupant_coeff: 1.0
 
     graph:
       graph_type: "auto"            # can be either full, auto or empty
@@ -39,11 +45,11 @@ env_args:
       use_grid: True
 
       # num of agents in every direction
-      num_x_agents: 5
+      num_x_agents: 10
       num_y_agents: 1
 
       # distances between the gridded agents
-      grid_dist_x: 1.05
+      grid_dist_x: 0.55
       grid_dist_y: 2.10
 
       # how much should the odd cols of agents be offsetted in the y direction
