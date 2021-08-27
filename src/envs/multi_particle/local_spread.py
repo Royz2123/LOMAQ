@@ -88,7 +88,8 @@ class LocalSpreadScenario(BaseScenario):
             elif self.params["rules"]["reward"]["landmark_occupant_reward"] == "closest":
                 agent_dists = [np.sqrt(np.sum(np.square(a.state.p_pos - landmark.state.p_pos))) for a in world.agents]
                 closest_agent = world.agents[np.argmin(agent_dists)]
-                rewards[closest_agent.id] += coeff
+                closest_dist = min(agent_dists)
+                rewards[closest_agent.id] += coeff * self.distance_to_reward(closest_dist)
 
             else:
                 raise Exception("Unrecognized Landmark Occupants Reward Type, exiting...")
@@ -189,7 +190,7 @@ class LocalSpreadScenario(BaseScenario):
     # normalizes reward to be distance between 1 and 0
     def distance_to_reward(self, dist):
         normalizing_const = self.params["rules"]["reward"]["landmark_radius"]
-        return normalizing_const / (normalizing_const + dist)
+        return normalizing_const / max(normalizing_const, dist)
 
     @staticmethod
     def is_collision(agent1, agent2):
