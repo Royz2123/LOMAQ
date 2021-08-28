@@ -27,7 +27,7 @@ override:
     rules:
       reward:
         landmark_occupant_coeff: [[1.0, 2.0], [1.0, 2.0]]
-        agent_radius: 0.15
+        agent_radius: 0.13
 
       # bounding params
       bounding:
