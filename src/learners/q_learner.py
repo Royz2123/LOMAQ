@@ -191,6 +191,11 @@ class QLearner:
 
     def compute_regularization(self, utilities, chosen_action_qvals, t_env):
         total_q = th.sum(chosen_action_qvals, dim=2)
+
+        print(total_q.device)
+        print(utilities.device)
+        exit()
+
         dq_du = th.autograd.grad(
             total_q,
             utilities,
