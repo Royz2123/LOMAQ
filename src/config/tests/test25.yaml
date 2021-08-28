@@ -2,7 +2,7 @@
 # Differs from the config files! watch out for collisions. This yaml triumphs in terms of collisions
 
 # number of tests to run (runs of main)
-num_runs: 2
+num_runs: 1
 env_name: multi_particle
 alg_name: local_qmix
 
@@ -23,7 +23,7 @@ override:
   env_args:
     rules:
       reward:
-        landmark_occupant_coeff: [[1.0, 2.0], [1.0, 3.0]]
+        landmark_occupant_coeff: [1.0, 3.0]
         agent_radius: 0.1
 
       # bounding params
