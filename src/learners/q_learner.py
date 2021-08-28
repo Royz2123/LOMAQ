@@ -191,14 +191,10 @@ class QLearner:
 
     def compute_regularization(self, utilities, chosen_action_qvals, t_env):
         total_q = th.sum(chosen_action_qvals, dim=2)
-
-        print(total_q.device)
-        print(utilities.device)
-
         dq_du = th.autograd.grad(
             total_q,
             utilities,
-            grad_outputs=th.ones(total_q.size()),
+            grad_outputs=th.ones(total_q.size()).to(self.args.device),
             retain_graph=True,
         )[0]
         reg_loss = th.sum(th.relu(-dq_du)) * self.args.monotonicity_loss_coeff
