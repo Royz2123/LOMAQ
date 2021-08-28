@@ -194,7 +194,6 @@ class QLearner:
 
         print(total_q.device)
         print(utilities.device)
-        exit()
 
         dq_du = th.autograd.grad(
             total_q,
