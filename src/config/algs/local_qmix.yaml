@@ -59,7 +59,7 @@ depth_k: 1
 # method, that adds a loss factor for negative gradients.
 # method can be either "weights" or "regularization"
 monotonicity_method: "regularization"
-monotonicity_loss_coeff: 1000
+monotonicity_loss_coeff: 1
 
 ### GCN parameters
 use_gcn: False
