@@ -13,6 +13,7 @@ class QMixer(nn.Module):
         self.state_dim = int(np.prod(args.state_shape))
 
         self.embed_dim = args.mixing_embed_dim
+        self.use_abs = getattr(args, "monotonicity_method", "weights") == "weights"
 
         if getattr(args, "hypernet_layers", 1) == 1:
             self.hyper_w_1 = nn.Linear(self.state_dim, self.embed_dim * self.n_agents)
@@ -44,14 +45,22 @@ class QMixer(nn.Module):
         agent_qs = agent_qs.view(-1, 1, self.n_agents)
 
         # First layer
-        w1 = th.abs(self.hyper_w_1(states))
+        if self.use_abs:
+            w1 = th.abs(self.hyper_w_1(states))
+        else:
+            w1 = self.hyper_w_1(states)
+
         b1 = self.hyper_b_1(states)
         w1 = w1.view(-1, self.n_agents, self.embed_dim)
         b1 = b1.view(-1, 1, self.embed_dim)
         hidden = F.elu(th.bmm(agent_qs, w1) + b1)
 
         # Second layer
-        w_final = th.abs(self.hyper_w_final(states))
+        if self.use_abs:
+            w_final = th.abs(self.hyper_w_final(states))
+        else:
+            w_final = self.hyper_w_final(states)
+
         w_final = w_final.view(-1, self.embed_dim, 1)
 
         # State-dependent bias

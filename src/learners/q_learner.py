@@ -189,6 +189,18 @@ class QLearner:
             return status, reward_mask, local_rewards
         return status, reward_mask, global_rewards
 
+    def compute_regularization(self, utilities, chosen_action_qvals, t_env):
+        total_q = th.sum(chosen_action_qvals, dim=2)
+        dq_du = th.autograd.grad(
+            total_q,
+            utilities,
+            grad_outputs=th.ones(total_q.size()),
+            retain_graph=True,
+        )[0]
+        reg_loss = th.sum(th.relu(-dq_du)) * self.args.monotonicity_loss_coeff
+        self.logger.log_stat("regularizing_loss", reg_loss.item(), t_env)
+        return reg_loss
+
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
         actions = batch["actions"][:, :-1]
         terminated = batch["terminated"][:, :-1].float()
@@ -244,11 +256,15 @@ class QLearner:
             target_max_qvals = target_mac_out.max(dim=3)[0]
 
         # Mix
+        utilities = chosen_action_qvals
         if self.mixer is not None:
             # Since we want to optimize the bellman equation, and the target refers to the
             # next state, we do this 1: , :-1 trim to the state batch
-            chosen_action_qvals = self.mixer(chosen_action_qvals, batch["state"][:, :-1], obs=batch["obs"][:, :-1])
-            target_max_qvals = self.target_mixer(target_max_qvals, batch["state"][:, 1:], obs=batch["obs"][:, 1:])
+            chosen_output_qvals = self.mixer(chosen_action_qvals, batch["state"][:, :-1], obs=batch["obs"][:, :-1])
+            target_output_qvals = self.target_mixer(target_max_qvals, batch["state"][:, 1:], obs=batch["obs"][:, 1:])
+        else:
+            chosen_output_qvals = chosen_action_qvals
+            target_output_qvals = chosen_action_qvals
 
         # Shape debugging purposes
         # print(f"Target Max qvals: {target_max_qvals.shape}")
@@ -261,7 +277,10 @@ class QLearner:
             loss_func = QLearner.compute_local_loss
         else:
             loss_func = QLearner.compute_global_loss
-        loss = loss_func(self, rewards, terminated, mask, target_max_qvals, chosen_action_qvals)
+        loss = loss_func(self, rewards, terminated, mask, target_output_qvals, chosen_output_qvals)
+
+        if getattr(self.args, "monotonicity_method", "weights") == "regularization":
+            loss += self.compute_regularization(utilities, chosen_output_qvals, t_env)
 
         # Optimise
         self.optimiser.zero_grad()
@@ -282,7 +301,7 @@ class QLearner:
             mask_elems = mask.sum().item()
             # self.logger.log_stat("td_error_abs", (masked_td_error.abs().sum().item() / mask_elems), t_env)
             self.logger.log_stat("q_taken_mean",
-                                 (chosen_action_qvals * mask).sum().item() / (mask_elems * self.args.n_agents), t_env)
+                                 (chosen_output_qvals * mask).sum().item() / (mask_elems * self.args.n_agents), t_env)
             # self.logger.log_stat("target_mean", (targets * mask).sum().item() / (mask_elems * self.args.n_agents),
             #                      t_env)
             self.log_stats_t = t_env
@@ -297,7 +316,7 @@ class QLearner:
                     "loss": loss.item(),
                     # "td_error": masked_td_error.abs().sum().item() / mask_elems,
                     "grad_norm": grad_norm.clone().cpu().detach().numpy(),
-                    "q_taken_mean": (chosen_action_qvals * mask).sum().item() / (mask_elems * self.args.n_agents),
+                    "q_taken_mean": (chosen_output_qvals * mask).sum().item() / (mask_elems * self.args.n_agents),
                     # "target_mean": (targets * mask).sum().item() / (mask_elems * self.args.n_agents)
                 }
             )

@@ -2,9 +2,9 @@
 # Differs from the config files! watch out for collisions. This yaml triumphs in terms of collisions
 
 # number of tests to run (runs of main)
-num_runs: 4
+num_runs: 2
 env_name: multi_particle
-alg_name: local_qmix
+alg_name: [local_qmix,qmix]
 
 # If an argument is in single value form - then it is constant throught all the runs
 # If an argument is in a list of length 2, then the program will assume a series of airthmetic progression [min, max]
@@ -23,8 +23,10 @@ override:
   env_args:
     rules:
       reward:
-        landmark_occupant_coeff: [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0]]
+        landmark_occupant_coeff: [[1.0, 2.0], [1.0, 2.0]]
         agent_radius: 0.1
+
+        landmark_occupant_reward: "closest"
 
       # bounding params
       bounding:

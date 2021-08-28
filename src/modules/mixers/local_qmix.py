@@ -106,6 +106,7 @@ class SubMixer(nn.Module):
         self.state_dim = int(np.prod(args.state_shape))
 
         self.embed_dim = args.mixing_embed_dim
+        self.use_abs = getattr(args, "monotonicity_method", "weights") == "weights"
 
         # This part is critical for the submixers, could be the source of problems!
         # In the original architecture, the mixer (i.e: submixer) recieves the inputs
@@ -154,14 +155,24 @@ class SubMixer(nn.Module):
         bs = agent_qs.size(0)
         states = states.reshape(-1, self.state_dim)
         agent_qs = agent_qs.view(-1, 1, self.submixer_qs_size)
+
         # First layer
-        w1 = th.abs(self.hyper_w_1(states))
+        if self.use_abs:
+            w1 = th.abs(self.hyper_w_1(states))
+        else:
+            w1 = self.hyper_w_1(states)
+
         b1 = self.hyper_b_1(states)
         w1 = w1.view(-1, self.submixer_qs_size, self.embed_dim)
         b1 = b1.view(-1, 1, self.embed_dim)
         hidden = F.elu(th.bmm(agent_qs, w1) + b1)
+
         # Second layer
-        w_final = th.abs(self.hyper_w_final(states))
+        if self.use_abs:
+            w_final = th.abs(self.hyper_w_final(states))
+        else:
+            w_final = self.hyper_w_final(states)
+
         w_final = w_final.view(-1, self.embed_dim, 1)
         # State-dependent bias
         v = self.V(states).view(-1, 1, 1)
