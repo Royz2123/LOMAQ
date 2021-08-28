@@ -19,6 +19,7 @@ env_args:
 
       # If enviroment offers local rewards, how should the occupant reward be exhbited?
       # can be either "first", "shared" or "closest"
+      # If coeff is a list, it must be of size num_landmarks, and corresponds to a different coeff for every reward.
       landmark_occupant_reward: "shared"
       landmark_occupant_coeff: 1.0
 
@@ -39,7 +40,7 @@ env_args:
       landmark_k: null
 
       # Order in which landmarks are observed, can be either "constant", "random", or "sorted"
-      obs_landmarks_order: "random"
+      obs_landmarks_order: "constant"
 
       # Should distance from landmarks be observed
 #      obs_landmarks_dists: True

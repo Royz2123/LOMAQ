@@ -283,7 +283,7 @@ class MultiParticleEnv(MultiAgentEnv):
             self.render_geoms_xform = []
 
             for entity in self.world.entities:
-                geom = rendering.make_circle(entity.size)
+                geom = rendering.make_circle(entity.size, res=getattr(entity, "res", 30))
                 xform = rendering.Transform()
                 if 'agent' in entity.name:
                     geom.set_color(*entity.color, alpha=0.5)

@@ -5,6 +5,14 @@ from envs.multi_particle.multiagent_particle_env.multiagent.core import World, A
 from envs.multi_particle.multiagent_particle_env.multiagent.scenario import BaseScenario
 
 
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except Exception as e:
+        return False
+
+
 class LocalSpreadScenario(BaseScenario):
     def __init__(self, params):
         self.params = params
@@ -33,6 +41,16 @@ class LocalSpreadScenario(BaseScenario):
             landmark.collide = False
             landmark.movable = False
             landmark.size = self.params["rules"]["reward"]["landmark_radius"]
+
+            if is_number(self.params["rules"]["reward"]["landmark_occupant_coeff"]):
+                landmark.reward = self.params["rules"]["reward"]["landmark_occupant_reward"]
+            elif type(self.params["rules"]["reward"]["landmark_occupant_coeff"]) == list:
+                landmark.reward = self.params["rules"]["reward"]["landmark_occupant_coeff"][i]
+            else:
+                raise Exception("Unsupported landmark reward type")
+
+            # Create different shapes for different reward types
+            landmark.res = 30 if landmark.reward <= 1.0 else 2 + int(landmark.reward)
 
         # make initial conditions
         self.reset_world(world)
@@ -68,10 +86,11 @@ class LocalSpreadScenario(BaseScenario):
 
     def compute_occupant_rewards(self, world):
         rewards = np.zeros(self.params["num_agents"])
-        coeff = self.params["rules"]["reward"]["landmark_occupant_coeff"]
 
         # set all landmark rewards
         for landmark_idx, landmark in enumerate(world.landmarks):
+            coeff = landmark.reward
+
             # If reward is shared between agents, disregard occupants (irrelevant)
             if self.params["rules"]["reward"]["landmark_occupant_reward"] == "shared":
                 # compute all of the agents that are close enough

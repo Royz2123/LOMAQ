@@ -61,6 +61,9 @@ class Landmark(Entity):
     def __init__(self):
         super(Landmark, self).__init__()
 
+        self.reward = 1.0
+        self.res = 30
+
 
 # properties of agent entities
 class Agent(Entity):
