@@ -23,7 +23,7 @@ override:
   env_args:
     rules:
       reward:
-        landmark_occupant_coeff: [1.0, 3.0]
+        landmark_occupant_coeff: [[1.0, 3.0]]
         agent_radius: 0.1
 
       # bounding params
