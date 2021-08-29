@@ -16,14 +16,14 @@ override:
   epsilon_anneal_time: 50000
 
   env_args:
-    a: 3.0
+    a: 10.0
     episode_limit: 10
 
   gamma: 0
 
   # Things that tend to get change in the local machine, just override
   test_nepisode: 10
-  human_mode: True
+  human_mode: False
 
   obs_agent_id: False # Include the agent's one_hot id in the observation
   obs_last_action: False # Include the agent's last action (one_hot) in the observation
