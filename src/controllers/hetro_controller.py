@@ -46,7 +46,7 @@ class HetroMac(BasicMAC):
             hidden_states.append(curr_hidden_states.unsqueeze(0))
             agent_outs.append(curr_agent_outs)
 
-        agent_outs = th.stack(agent_outs, dim=0)
+        agent_outs = th.stack(agent_outs, dim=1)
         self.hidden_states = th.stack(hidden_states, dim=1)
 
         return agent_outs.view(ep_batch.batch_size, self.n_agents, -1)

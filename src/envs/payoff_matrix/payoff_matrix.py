@@ -2,11 +2,14 @@ from envs.multiagentenv import MultiAgentEnv
 from utils.dict2namedtuple import convert
 import numpy as np
 
+from components.locality_graph import DependencyGraph
+
 
 class MatrixEnv(MultiAgentEnv):
     def __init__(
             self,
             a=2.0,
+            episode_limit=2,
             seed=None,
             exp_logger=None,
             learner_name="default_learner",
@@ -14,34 +17,60 @@ class MatrixEnv(MultiAgentEnv):
         # Define the agents and actions
         self.n_agents = 2
         self.n_actions = 2
-        self.episode_limit = 1
+        self.episode_limit = episode_limit
+        self.episode_steps = 0
 
         self.r_1 = np.array([
             [1, 0.5 * a],
-            [a, a],
+            [1, a],
         ])
         self.r_2 = np.array([
             [a, 0.5 * a],
-            [1, a],
+            [0, 0],
         ])
+        # self.r_1 = np.array([
+        #     [4, 3],
+        #     [1, 3],
+        # ])
+        # self.r_2 = np.array([
+        #     [0, 0],
+        #     [0, 0],
+        # ])
         self.payoff_matrix = self.r_1 + self.r_2
+
         self.state = np.ones(2)
+
+        self.graph_obj = DependencyGraph(
+            graph=DependencyGraph.build_simple_graph(self.n_agents, graph_type="full"),
+            num_agents=self.n_agents,
+        )
+
+    def get_reward_size(self):
+        return self.n_agents
+
+    def get_graph_obj(self):
+        return self.graph_obj
+
+    def render(self):
+        pass
 
     def reset(self):
         """ Returns initial observations and states"""
+        self.episode_steps = 0
         return self.state, self.state
+
+    def close(self):
+        pass
 
     def step(self, actions):
         """ Returns reward, terminated, info """
         r_1 = self.r_1[actions[0], actions[1]]
         r_2 = self.r_2[actions[0], actions[1]]
         reward = np.array([r_1, r_2])
+        self.episode_steps += 1
 
-        info = {}
-        terminated = True
-        info["episode_limit"] = False
-
-        return reward, terminated, info
+        done = self.episode_steps >= self.episode_limit
+        return reward, done, {}
 
     def get_obs(self):
         return [self.state for _ in range(self.n_agents)]

@@ -105,8 +105,8 @@ class MultiParticleEnv(MultiAgentEnv):
 
     def build_graph(self):
         graph_type = self.params["rules"]["graph"]["graph_type"]
-        if graph_type in ["empty", "full"]:
-            graph = MultiParticleEnv.build_simple_graph(self.n_agents, graph_type)
+        if graph_type in ["empty", "full", "line"]:
+            graph = DependencyGraph.build_simple_graph(self.n_agents, graph_type=graph_type)
         elif graph_type == "auto":
             graph = self.build_auto_graph()
         else:
@@ -118,22 +118,6 @@ class MultiParticleEnv(MultiAgentEnv):
     def _reset_render(self):
         self.render_geoms = None
         self.render_geoms_xform = None
-
-    # builds either the full graph or the empty graph
-    @staticmethod
-    def build_simple_graph(num_agents, graph_type="empty"):
-        graph = nx.Graph()
-
-        # add all the agents (necessary for the empty case)
-        for i in range(num_agents):
-            graph.add_node(i)
-
-        # if not empty then full and add all the edges
-        if graph_type == "full":
-            for i in range(num_agents):
-                for j in range(i + 1, num_agents):
-                    graph.add_edge(i, j)
-        return graph
 
     # builds either the full graph or the empty graph
     def build_auto_graph(self):

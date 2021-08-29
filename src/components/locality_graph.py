@@ -10,10 +10,10 @@ class DependencyGraph:
     def __init__(self, graph=None, num_agents=1, keep_cache=True):
         self.num_agents = num_agents
 
-        # Save graph object
+        # Save graph object, by default let it be a full graph
         self.graph = graph
         if graph is None:
-            self.graph = DependencyGraph.create_default_graph(num_agents)
+            self.graph = DependencyGraph.build_simple_graph(num_agents, graph_type="full")
 
         # Create also a corresponding graph with self loops
         self.graph_self_loops = self.create_self_loop_graph()
@@ -98,13 +98,25 @@ class DependencyGraph:
         nx.draw_networkx(self.graph, arrows=True, with_labels=True)
         plt.show()
 
-    # Default graph is a line graph between all the agents
     @staticmethod
-    def create_default_graph(num_agents):
+    def build_simple_graph(num_agents, graph_type="empty"):
         graph = nx.Graph()
-        graph.add_node(0)
-        for i in range(num_agents - 1):
-            graph.add_edge(i, i + 1)
+
+        # add all the agents (necessary for the empty case)
+        for i in range(num_agents):
+            graph.add_node(i)
+
+        # if not empty then full and add all the edges
+        if graph_type == "full":
+            for i in range(num_agents):
+                for j in range(i + 1, num_agents):
+                    graph.add_edge(i, j)
+
+        # If line graph
+        if graph_type == "line":
+            for i in range(num_agents - 1):
+                graph.add_edge(i, i + 1)
+
         return graph
 
 

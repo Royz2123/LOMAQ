@@ -127,7 +127,7 @@ class MultiCartPoleEnv(MultiAgentEnv):
         # In the MultiCart enviroment we can model the interactions as a single line graph. This is the default
         # architecture
         self.graph_obj = DependencyGraph(
-            graph=None,
+            graph=DependencyGraph.build_simple_graph(self.params["num_cartpoles"], graph_type="line"),
             num_agents=self.params["num_cartpoles"],
         )
 

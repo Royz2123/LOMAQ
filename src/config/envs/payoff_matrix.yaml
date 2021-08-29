@@ -1,13 +1,13 @@
 env: payoff_matrix
 
 env_args:
-  a: 2.0
+  a: 30.0
 
 test_greedy: True
-test_nepisode: 1
-test_interval: 20000
-log_interval: 20000
-save_vid_interval: 100000
+test_nepisode: 10
+test_interval: 1000
+log_interval: 1000
+save_vid_interval: 10000000000
 runner_log_interval: 500
 learner_log_interval: 500
-t_max: 2000000
+t_max: 50000

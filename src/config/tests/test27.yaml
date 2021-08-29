@@ -18,7 +18,7 @@ override:
   monotonicity_loss_coeff: 0.1
 
   # Things that tend to get change in the local machine, just override
-  test_nepisode: 1
+  test_nepisode: 10
   human_mode: False
 
   # The real changes

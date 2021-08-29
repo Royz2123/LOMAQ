@@ -2,9 +2,9 @@
 # Differs from the config files! watch out for collisions. This yaml triumphs in terms of collisions
 
 # number of tests to run (runs of main)
-num_runs: 2
+num_runs: 6
 env_name: payoff_matrix
-alg_name: [qmix,qmix]
+alg_name: local_qmix
 
 # If an argument is in single value form - then it is constant throught all the runs
 # If an argument is in a list of length 2, then the program will assume a series of airthmetic progression [min, max]
@@ -14,6 +14,10 @@ alg_name: [qmix,qmix]
 override:
   epsilon_finish: 1.0
   epsilon_anneal_time: 50000
+
+  env_args:
+    a: 3.0
+    episode_limit: 10
 
   gamma: 0
 
@@ -27,5 +31,5 @@ override:
 
   mac: "hetro_mac"
   monotonicity_method: "regularization"
-  monotonicity_loss_coeff: 1.0
+  monotonicity_loss_coeff: [0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0]
 

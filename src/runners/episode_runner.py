@@ -63,7 +63,11 @@ class EpisodeRunner:
         self.mac.init_hidden(batch_size=self.batch_size)
 
         last_test_episode = test_mode and (len(self.test_returns) == self.args.test_nepisode - 1)
-        upload_vid_episode = last_test_episode and (self.t_env - self.log_last_upload_t) >= self.args.save_vid_interval
+        upload_vid_episode = (
+                last_test_episode
+                and hasattr(self.env, "viewer")
+                and (self.t_env - self.log_last_upload_t) >= self.args.save_vid_interval
+        )
 
         img_array = []
         while not terminated:
