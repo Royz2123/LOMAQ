@@ -308,18 +308,17 @@ class QLearner:
             #                      t_env)
             self.log_stats_t = t_env
 
-            # visualize
-            print(f"Q Values: ")
-
-            mac_output = mac_out[:1, :1]
-            q_tot = []
-            for agent1_act, agent2_act in [(0, 0), (0, 1), (1, 0), (1, 1)]:
-                utilities = th.stack([mac_output[:, :, 0, agent1_act], mac_output[:, :, 1, agent2_act]], dim=2)
-                q_values = self.mixer(utilities, batch["state"][:1, :1], obs=None)
-                # print(f"Q1, Q2: for a1={agent1_act}, a2={agent2_act}:\t{q_values}")
-                q_tot.append(th.sum(q_values))
-
-            print(f"{q_tot[0]}\t{q_tot[1]}\n{q_tot[2]}\t{q_tot[3]}")
+            # Visualize Q values if necessary (mostly for the payoff matrix enviroment)
+            if getattr(self.args, "display_q_values", False):
+                print(f"Q Values: ")
+                mac_output = mac_out[:1, :1]
+                q_tot = []
+                for agent1_act, agent2_act in [(0, 0), (0, 1), (1, 0), (1, 1)]:
+                    utilities = th.stack([mac_output[:, :, 0, agent1_act], mac_output[:, :, 1, agent2_act]], dim=2)
+                    q_values = self.mixer(utilities, batch["state"][:1, :1], obs=None)
+                    # print(f"Q1, Q2: for a1={agent1_act}, a2={agent2_act}:\t{q_values}")
+                    q_tot.append(th.sum(q_values))
+                print(f"{q_tot[0]}\t{q_tot[1]}\n{q_tot[2]}\t{q_tot[3]}")
 
             # My own local exp logger
             self.args.exp_logger.save_learner_data(

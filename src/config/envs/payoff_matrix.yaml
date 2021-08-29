@@ -2,7 +2,9 @@ env: payoff_matrix
 
 env_args:
   a: 30.0
+  episode_limit: 2.0
 
+display_q_values: True
 test_greedy: True
 test_nepisode: 10
 test_interval: 1000
