@@ -4,7 +4,13 @@ import numpy as np
 
 
 class MatrixEnv(MultiAgentEnv):
-    def __init__(self, a=2.0):
+    def __init__(
+            self,
+            a=2.0,
+            seed=None,
+            exp_logger=None,
+            learner_name="default_learner",
+    ):
         # Define the agents and actions
         self.n_agents = 2
         self.n_actions = 2

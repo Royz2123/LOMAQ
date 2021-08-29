@@ -31,10 +31,10 @@ class MultiParticleEnv(MultiAgentEnv):
             num_agents=1,
             num_landmarks=1,
             rules=None,
-            seed=None,
-            exp_logger=None,
             episode_limit=500,
             animation_speed=0,
+            seed=None,
+            exp_logger=None,
             learner_name="default_learner",
     ):
         self.params = {
