@@ -3,7 +3,6 @@ env: payoff_matrix
 env_args:
   a: 2.0
 
-
 test_greedy: True
 test_nepisode: 1
 test_interval: 20000

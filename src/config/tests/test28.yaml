@@ -12,6 +12,10 @@ alg_name: [local_qmix,qmix]
 # Argument name and heirarchy must exist in the config files
 
 override:
+  # Things that tend to get change in the local machine, just override
+  test_nepisode: 10
+  human_mode: False
+
   mac: "hetro_mac"
   monotonicity_method: "regularization"
   monotonicity_loss_coeff: 0.1

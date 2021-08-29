@@ -4,18 +4,11 @@ import numpy as np
 
 
 class MatrixEnv(MultiAgentEnv):
-    def __init__(self, batch_size=None, **kwargs):
-        # Unpack arguments from sacred
-        args = kwargs["env_args"]
-        if isinstance(args, dict):
-            args = convert(args)
-
+    def __init__(self, a=2.0):
         # Define the agents and actions
         self.n_agents = 2
         self.n_actions = 2
         self.episode_limit = 1
-
-        a = args["a"]
 
         self.r_1 = np.array([
             [1, 0.5 * a],
