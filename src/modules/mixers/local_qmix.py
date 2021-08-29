@@ -7,6 +7,8 @@ import numpy as np
 # So what does the LocalQMixer look like coceptually?
 # We have a mixing layer that redirects inputs based on the graph and k
 # and then we have an array of submixers
+from modules.mixers.hypernetwork import HyperNetwork
+
 
 class LocalQMixer(nn.Module):
     def __init__(self, args):
@@ -105,8 +107,7 @@ class SubMixer(nn.Module):
         self.args = args
         self.state_dim = int(np.prod(args.state_shape))
 
-        self.embed_dim = args.mixing_embed_dim
-        self.use_abs = getattr(args, "monotonicity_method", "weights") == "weights"
+        self.use_hyper_network = getattr(args, "monotonicity_method", "weights") == "weights"
 
         # This part is critical for the submixers, could be the source of problems!
         # In the original architecture, the mixer (i.e: submixer) recieves the inputs
@@ -118,29 +119,33 @@ class SubMixer(nn.Module):
         # be the size of the appropriate neighbourhood
         self.submixer_qs_size = len(self.agent_nbrhood)
 
-        if getattr(args, "hypernet_layers", 1) == 1:
-            self.hyper_w_1 = nn.Linear(self.state_dim, self.embed_dim * self.submixer_qs_size)
-            self.hyper_w_final = nn.Linear(self.state_dim, self.embed_dim)
-        elif getattr(args, "hypernet_layers", 1) == 2:
-            hypernet_embed = self.args.hypernet_embed
-            self.hyper_w_1 = nn.Sequential(nn.Linear(self.state_dim, hypernet_embed),
-                                           nn.ReLU(),
-                                           nn.Linear(hypernet_embed, self.embed_dim * self.submixer_qs_size))
-            self.hyper_w_final = nn.Sequential(nn.Linear(self.state_dim, hypernet_embed),
-                                               nn.ReLU(),
-                                               nn.Linear(hypernet_embed, self.embed_dim))
-        elif getattr(args, "hypernet_layers", 1) > 2:
-            raise Exception("Sorry >2 hypernet layers is not implemented!")
+        self.input_size = len(self.agent_nbrhood)
+        self.output_size = 1
+        self.hidden_size = args.mixing_embed_dim
+
+        # breaking the MLP to hypernetworks for deriving the weights and biases
+        # We will implement a small 2-layer network for every submixer
+        # The dimensions will be (feature_size, sub_mixer_embed_dim, 1)
+        if self.use_hyper_network:
+            self.hyper_input_size = int(np.prod(args.state_shape))
+            self.hyper_hidden_size = self.args.hypernet_embed
+            self.hyper_layers = getattr(args, "hypernet_layers", 1)
+
+            self.hyper_network = HyperNetwork(
+                args,
+                self.hyper_input_size,
+                self.input_size,
+                self.hyper_hidden_size,
+                self.hidden_size,
+                self.output_size,
+                self.hyper_layers,
+            )
         else:
-            raise Exception("Error setting number of hypernet layers.")
-
-        # State dependent bias for hidden layer
-        self.hyper_b_1 = nn.Linear(self.state_dim, self.embed_dim)
-
-        # V(s) instead of a bias for the last layers
-        self.V = nn.Sequential(nn.Linear(self.state_dim, self.embed_dim),
-                               nn.ReLU(),
-                               nn.Linear(self.embed_dim, 1))
+            self.network = nn.Sequential(
+                nn.Linear(self.input_size, self.hidden_size),
+                nn.Tanh(),
+                nn.Linear(self.hidden_size, self.output_size)
+            )
 
     def __repr__(self):
         return f"\nSubmixer for Agent {self.agent_index} reporting for duty\nNeighborhood: {self.agent_nbrhood}\n"
@@ -151,36 +156,22 @@ class SubMixer(nn.Module):
 
         return self.agent_nbrhood
 
-    def forward(self, agent_qs, states):
-        bs = agent_qs.size(0)
-        states = states.reshape(-1, self.state_dim)
-        agent_qs = agent_qs.view(-1, 1, self.submixer_qs_size)
+    def forward(self, utilities, states):
+        # Now flatten the last 2 dimensions for the network
+        utilities = th.reshape(utilities, shape=(
+            *utilities.shape[:2], self.input_size)
+        )
 
-        # First layer
-        if self.use_abs:
-            w1 = th.abs(self.hyper_w_1(states))
+        if self.use_hyper_network:
+            q_i = self.hyper_network(utilities, states)
         else:
-            w1 = self.hyper_w_1(states)
+            q_i = self.network(utilities)
 
-        b1 = self.hyper_b_1(states)
-        w1 = w1.view(-1, self.submixer_qs_size, self.embed_dim)
-        b1 = b1.view(-1, 1, self.embed_dim)
-        hidden = F.elu(th.bmm(agent_qs, w1) + b1)
-
-        # Second layer
-        if self.use_abs:
-            w_final = th.abs(self.hyper_w_final(states))
-        else:
-            w_final = self.hyper_w_final(states)
-
-        w_final = w_final.view(-1, self.embed_dim, 1)
-        # State-dependent bias
-        v = self.V(states).view(-1, 1, 1)
-        # Compute final output
-        y = th.bmm(hidden, w_final) + v
-        # Reshape and return
-        q_tot = y.view(bs, -1, 1)
-        return q_tot
+        # Return to original shape
+        q_i = th.reshape(q_i, shape=(
+            *utilities.shape[:2], self.output_size)
+        )
+        return q_i
 
 
 class SharedSubMixer(SubMixer):

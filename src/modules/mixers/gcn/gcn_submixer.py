@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from modules.mixers.gcn.hypernetwork import HyperNetwork
+from modules.mixers.hypernetwork import HyperNetwork
 
 
 # Quite a simple component - basically recieves the mixed node feature from the GCN and does some fine tuning so that

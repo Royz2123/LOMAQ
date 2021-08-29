@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from modules.mixers.gcn.hypernetwork import HyperNetwork
+from modules.mixers.hypernetwork import HyperNetwork
 
 
 class MonotonicGCNLayer(nn.Module):

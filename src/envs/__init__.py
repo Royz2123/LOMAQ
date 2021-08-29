@@ -2,6 +2,7 @@ from functools import partial
 from envs.multi_cart.multi_cart_env import MultiCartPoleEnv
 from envs.access_point.access_point_env import AccessPointEnv
 from envs.multi_particle.multi_particle_env import MultiParticleEnv
+from envs.payoff_matrix.payoff_matrix import MatrixEnv
 
 # If we are using Traffic Environments
 # from envs.traffic.traffic_env import TrafficEnv
@@ -25,6 +26,7 @@ REGISTRY = {}
 REGISTRY["multi_cart"] = partial(env_fn, env=MultiCartPoleEnv)
 REGISTRY["access_point"] = partial(env_fn, env=AccessPointEnv)
 REGISTRY["multi_particle"] = partial(env_fn, env=MultiParticleEnv)
+REGISTRY["payoff_matrix"] = partial(env_fn, env=MatrixEnv)
 
 # Only use if we have starcraft installed
 # REGISTRY["sc2"] = partial(env_fn, env=StarCraft2Env)

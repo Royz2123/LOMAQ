@@ -12,11 +12,13 @@ alg_name: [local_qmix,qmix]
 # Argument name and heirarchy must exist in the config files
 
 override:
-  monotonicity_method: "regularization"
-  monotonicity_loss_coeff: 1
+  mac: "hetro_mac"
+
+  monotonicity_method: "weights"
+  monotonicity_loss_coeff: 0.1
 
   # Things that tend to get change in the local machine, just override
-  test_nepisode: 10
+  test_nepisode: 1
   human_mode: False
 
   # The real changes
@@ -27,7 +29,7 @@ override:
     rules:
       reward:
         landmark_occupant_coeff: [[1.0, 2.0], [1.0, 2.0]]
-        agent_radius: 0.13
+        agent_radius: 0.12
 
       # bounding params
       bounding:

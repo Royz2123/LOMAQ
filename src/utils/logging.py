@@ -31,6 +31,10 @@ class Logger:
         self.sacred_info = sacred_run_dict.info
         self.use_sacred = True
 
+    def log_model(self, model):
+        if self.use_wandb:
+            wandb.watch(model, log_freq=100)
+
     def setup_wandb(self, config, run_name=None):
         self.wandb_run = wandb.init(project=f"Local-QMIX", config=config, reinit=True)
 
