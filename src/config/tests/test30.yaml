@@ -16,7 +16,7 @@ override:
   epsilon_anneal_time: 50000
 
   env_args:
-    a: 10.0
+    a: 3.0
     episode_limit: 10
 
   gamma: 0
