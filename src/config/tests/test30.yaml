@@ -2,7 +2,7 @@
 # Differs from the config files! watch out for collisions. This yaml triumphs in terms of collisions
 
 # number of tests to run (runs of main)
-num_runs: 6
+num_runs: 7
 env_name: payoff_matrix
 alg_name: local_qmix
 
