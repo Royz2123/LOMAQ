@@ -26,3 +26,4 @@ override:
   env_args:
     num_cartpoles: 30
 
+  t_max: 3000000
