@@ -1,0 +1,65 @@
+# All parameters that we wish to change during the multi_run
+# Differs from the config files! watch out for collisions. This yaml triumphs in terms of collisions
+
+# number of tests to run (runs of main)
+num_runs: 6
+env_name: multi_particle
+alg_name: qmix
+
+# If an argument is in single value form - then it is constant throught all the runs
+# If an argument is in a list of length 2, then the program will assume a series of airthmetic progression [min, max]
+# If an argument is a list of any other length, then it must be of size "num_tests"
+# Argument name and heirarchy must exist in the config files
+
+override:
+  mac: "hetro_mac"
+  monotonicity_method: "regularization"
+  monotonicity_loss_coeff: [0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
+
+  # Things that tend to get change in the local machine, just override
+  test_nepisode: 10
+  human_mode: False
+
+  # The real changes
+  epsilon_anneal_time: 200000
+  epsilon_finish: 0.05
+
+  env_args:
+    rules:
+      reward:
+        landmark_occupant_coeff: [[1.0, 3.0]]
+        agent_radius: 0.12
+
+      # bounding params
+      bounding:
+        bound_dist: 0.5
+
+      obs:
+        show_num_agents_on_landmark: [True, True, True, False, False, False]
+
+      grid:
+        use_grid: True
+
+        # num of agents in every direction
+        num_x_agents: 2
+        num_y_agents: 1
+
+        # distances between the gridded agent's bounds
+        grid_dist_x: 0.5
+        grid_dist_y: 1.0
+
+        # how much should the odd cols of agents be offsetted in the y direction
+        grid_offset: 0
+
+        # spawn radius for both the agents and the landmarks
+        agent_spawn_radius: 0.1
+        landmark_spawn_radius: 0.1
+
+        # Where should each landmark spawn relative to it's bound center?
+        landmark_spawn_offset_x: -0.25
+        landmark_spawn_offset_y: 0.25
+
+        # Where should each agent spawn relative to it's bound center?
+        agent_spawn_offset_x: 0.0
+        agent_spawn_offset_y: -0.25
+
