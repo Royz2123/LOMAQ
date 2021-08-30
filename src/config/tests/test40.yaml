@@ -2,7 +2,7 @@
 # Differs from the config files! watch out for collisions. This yaml triumphs in terms of collisions
 
 # number of tests to run (runs of main)
-num_runs: 8
+num_runs: 5
 env_name: multi_particle
 alg_name: local_qmix
 
@@ -14,20 +14,20 @@ alg_name: local_qmix
 override:
   mac: "hetro_mac"
   monotonicity_method: "regularization"
-  monotonicity_loss_coeff: [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.05]
+  monotonicity_loss_coeff: [0.001, 0.005, 0.01, 0.05, 0.1]
 
   # Things that tend to get change in the local machine, just override
   test_nepisode: 10
   human_mode: False
 
   # The real changes
-  epsilon_anneal_time: 150000
+  epsilon_anneal_time: 400000
   epsilon_finish: 0.05
 
   env_args:
     rules:
       reward:
-        landmark_occupant_coeff: [[1.0, 3.0], [1.0, 3.0], [1.0, 3.0], [1.0, 3.0], [1.0, 3.0], [1.0, 3.0], [1.0, 3.0], [1.0, 3.0]]
+        landmark_occupant_coeff: [[1.0, 3.0]]
         agent_radius: 0.12
 
       # bounding params
