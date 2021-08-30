@@ -43,7 +43,7 @@ class LocalSpreadScenario(BaseScenario):
             landmark.size = self.params["rules"]["reward"]["landmark_radius"]
 
             if is_number(self.params["rules"]["reward"]["landmark_occupant_coeff"]):
-                landmark.reward = self.params["rules"]["reward"]["landmark_occupant_reward"]
+                landmark.reward = self.params["rules"]["reward"]["landmark_occupant_coeff"]
             elif type(self.params["rules"]["reward"]["landmark_occupant_coeff"]) == list:
                 landmark.reward = self.params["rules"]["reward"]["landmark_occupant_coeff"][i]
             else:

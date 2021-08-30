@@ -1,0 +1,30 @@
+# Test 35 tests representability using the payoff matrix
+
+num_runs: 4
+env_name: payoff_matrix
+alg_name: [ local_qmix,local_qmix,qmix,qmix ]
+
+override:
+  # Things that tend to get change in the local machine, just override
+  test_nepisode: 10
+  human_mode: False
+
+  # Dynamic changes
+  monotonicity_method: [ "regularization", "weights", "regularization", "weights" ]
+  monotonicity_loss_coeff: [ 0.1, 0.1, 0.5, 0.5 ]
+
+  # Constant changes
+  display_q_values: True
+  epsilon_finish: 1.0
+  gamma: 0
+  obs_agent_id: False
+  obs_last_action: False
+  agent: "ff"
+  mac: "hetro_mac"
+  env_args:
+    a: 3.0
+    episode_limit: 10
+
+
+
+
