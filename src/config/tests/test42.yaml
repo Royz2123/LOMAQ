@@ -2,7 +2,7 @@
 # Differs from the config files! watch out for collisions. This yaml triumphs in terms of collisions
 
 # number of tests to run (runs of main)
-num_runs: 1
+num_runs: 6
 env_name: multi_particle
 alg_name: qmix
 
@@ -20,7 +20,7 @@ override:
   human_mode: False
 
   # The real changes
-  epsilon_anneal_time: 300000
+  epsilon_anneal_time: [50000, 100000, 200000, 50000, 100000, 200000]
   epsilon_finish: 0.05
 
   env_args:
@@ -32,6 +32,9 @@ override:
       # bounding params
       bounding:
         bound_dist: 0.5
+
+      obs:
+        show_num_agents_on_landmark: [True, True, True, False, False, False]
 
       grid:
         use_grid: True
