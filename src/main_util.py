@@ -73,15 +73,18 @@ def get_current_run_override_config(orig_dict, test_num, num_tests):
 
     elif type(orig_dict) == list:
         # Assume [min, max] if ints
+        if len(orig_dict) == 1:
+            return orig_dict[0]
+
         if len(orig_dict) == 2 and is_number(orig_dict[0]) and is_number(orig_dict[1]):
             delta = orig_dict[1] - orig_dict[0]
             return orig_dict[0] + delta * (test_num / (num_tests - 1))
 
-        elif len(orig_dict) != num_tests:
-            raise Exception(f"List length must be equal to num_tests or 2. Params: {orig_dict}, Required: {num_tests}")
+        if len(orig_dict) == num_tests:
+            return orig_dict[test_num]
 
         else:
-            return orig_dict[test_num]
+            return orig_dict
 
     # In this case, just assume constant value
     else:
