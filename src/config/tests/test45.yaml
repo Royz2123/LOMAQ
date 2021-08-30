@@ -13,7 +13,7 @@ override:
   monotonicity_method: [ "regularization", "weights", "weights", "weights", "weights" ,"weights", "weights" ]
 
   # Constant changes
-  monotonicity_loss_coeff: 0.1
+  monotonicity_loss_coeff: 0.05
   mac: "hetro_mac"
   epsilon_anneal_time: 300000
   epsilon_finish: 0.05
