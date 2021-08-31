@@ -1,3 +1,4 @@
+import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -20,4 +21,8 @@ class RNNAgent(nn.Module):
         h_in = hidden_state.reshape(-1, self.args.rnn_hidden_dim)
         h = self.rnn(x, h_in)
         q = self.fc2(h)
+
+        if getattr(self.args, "regularization_clamp", False):
+            q = th.clamp(q, min=0, max=1)
+
         return q, h

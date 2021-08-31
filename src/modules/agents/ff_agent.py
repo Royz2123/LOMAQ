@@ -22,4 +22,8 @@ class FFAgent(nn.Module):
         # h_in = hidden_state.reshape(-1, self.args.rnn_hidden_dim)
         h = F.relu(self.fc2(x))
         q = self.fc3(h)
+
+        if getattr(self.args, "regularization_clamp", False):
+            q = th.clamp(q, min=0, max=1)
+
         return q, h
