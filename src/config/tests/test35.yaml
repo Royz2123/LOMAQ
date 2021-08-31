@@ -1,17 +1,18 @@
 # Test 35 tests representability using the payoff matrix
 
-num_runs: 4
+num_runs: 6
 env_name: payoff_matrix
-alg_name: [ local_qmix,local_qmix,qmix,qmix ]
+alg_name: [ local_qmix,local_qmix, local_qmix, qmix,qmix,qmix ]
 
 override:
   # Things that tend to get change in the local machine, just override
   test_nepisode: 10
-  human_mode: False
+  human_mode: True
 
   # Dynamic changes
-  monotonicity_method: [ "regularization", "weights", "regularization", "weights" ]
-  monotonicity_loss_coeff: [ 0.05, 0.05, 0.5, 0.5 ]
+  monotonicity_method: [ "regularization", "regularization", "weights", "regularization", "regularization", "weights" ]
+  p_enforce: [ "singletons", "full", "no_reg", "singletons", "full", "no_reg" ]
+  monotonicity_loss_coeff: 0.5
 
   # Constant changes
   display_q_values: True

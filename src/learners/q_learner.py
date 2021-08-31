@@ -191,16 +191,35 @@ class QLearner:
             return status, reward_mask, local_rewards
         return status, reward_mask, global_rewards
 
-    def compute_regularization(self, utilities, chosen_action_qvals, t_env):
-        total_q = th.sum(chosen_action_qvals, dim=2)
+    def compute_gradient(self, utilities, qvals):
         dq_du = th.autograd.grad(
-            total_q,
+            qvals,
             utilities,
-            grad_outputs=th.ones(total_q.size()).to(self.args.device),
-            retain_graph=True,
+            grad_outputs=th.ones(qvals.size()).to(self.args.device),
+            create_graph=True,
         )[0]
-        reg_loss = th.sum(th.relu(-dq_du)) * self.args.monotonicity_loss_coeff
-        self.logger.log_stat("regularizing_loss", reg_loss.item(), t_env)
+        return dq_du
+
+    def punish_negative_gradients(self, utilities, qvals):
+        return th.sum(th.relu(-self.compute_gradient(utilities, qvals)))
+
+    def compute_regularization(self, utilities, chosen_action_qvals, t_env):
+        # Compute gradient based on p_enforce
+        p_enforce = getattr(self.args, "p_enforce", "singletons")
+        if p_enforce == "singletons":
+            reg_loss = 0
+            for i in range(chosen_action_qvals.shape[2]):
+                reg_loss += self.punish_negative_gradients(utilities, chosen_action_qvals[:, :, i])
+        elif p_enforce == "full":
+            total_q = th.sum(chosen_action_qvals, dim=2)
+            reg_loss = self.punish_negative_gradients(utilities, total_q)
+        else:
+            # TODO: add support for enforcing a general partition
+            raise Exception(f"Unsupported partition for monotonicity: {p_enforce}")
+
+        # We want regularization to be invariant to batch size, episode length, and num agents
+        normalization = th.prod(th.tensor(chosen_action_qvals.shape), dim=0)
+        reg_loss = reg_loss / normalization
         return reg_loss
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
@@ -282,7 +301,10 @@ class QLearner:
         loss = loss_func(self, rewards, terminated, mask, target_output_qvals, chosen_output_qvals)
 
         if getattr(self.args, "monotonicity_method", "weights") == "regularization":
-            loss += self.compute_regularization(utilities, chosen_output_qvals, t_env)
+            coeff = self.args.monotonicity_loss_coeff
+            reg_loss = self.compute_regularization(utilities, chosen_output_qvals, t_env)
+            loss = coeff * reg_loss + (1 - coeff) * loss
+            self.logger.log_stat("regularizing_loss", reg_loss.item(), t_env)
 
         # Optimise
         self.optimiser.zero_grad()

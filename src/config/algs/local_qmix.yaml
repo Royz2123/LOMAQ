@@ -57,9 +57,9 @@ depth_k: 1
 # How do we enforce monotonicity constraints? In QMIX, this was simply done by non-negative weights. Since this
 # unnecesserily enforces that every Q_i is monotonic as well, we implement monotonicity constraints in a second
 # method, that adds a loss factor for negative gradients.
-# method can be either "weights" or "regularization"
-monotonicity_method: "regularization"
-monotonicity_loss_coeff: 1
+p_enforce: "full"                        # What partition of monotonicity should we enforce here
+monotonicity_method: "regularization"    # method can be either "weights" or "regularization"
+monotonicity_coefff: 0.5
 
 ### GCN parameters
 use_gcn: False
