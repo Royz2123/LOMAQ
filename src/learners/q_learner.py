@@ -209,7 +209,8 @@ class QLearner:
         if p_enforce == "singletons":
             reg_loss = 0
             for i in range(chosen_action_qvals.shape[2]):
-                reg_loss += self.punish_negative_gradients(utilities, chosen_action_qvals[:, :, i])
+                q_vals = th.reshape(chosen_action_qvals[:, :, i], shape=(*chosen_action_qvals.shape[:2], 1))
+                reg_loss += self.punish_negative_gradients(utilities, q_vals)
         elif p_enforce == "full":
             total_q = th.sum(chosen_action_qvals, dim=2)
             reg_loss = self.punish_negative_gradients(utilities, total_q)
@@ -301,10 +302,26 @@ class QLearner:
         loss = loss_func(self, rewards, terminated, mask, target_output_qvals, chosen_output_qvals)
 
         if getattr(self.args, "monotonicity_method", "weights") == "regularization":
+            # If sample is set to true, we don't use the given utilities, rather we sample from the bounding box that
+            # they imply. This creates a more uniform punishment for the gradient of Q by U
+            if getattr(self.args, "sample_utilities", False):
+                n_agents = utilities.shape[-1]
+                flattened_utilities = th.reshape(utilities, shape=(-1, n_agents)).detach().numpy()
+                sampled_utilities = th.tensor(np.random.uniform(
+                    low=[np.min(flattened_utilities[:, i]) for i in range(n_agents)],
+                    high=[np.max(flattened_utilities[:, i]) for i in range(n_agents)],
+                    size=utilities.detach().numpy().shape
+                ), requires_grad=True, device=self.args.device).float()
+                sampled_q_vals = self.mixer(sampled_utilities, batch["state"][:, :-1], obs=batch["obs"][:, :-1])
+                reg_loss = self.compute_regularization(sampled_utilities, sampled_q_vals, t_env)
+            else:
+                reg_loss = self.compute_regularization(utilities, chosen_output_qvals, t_env)
+
             coeff = self.args.monotonicity_loss_coeff
-            reg_loss = self.compute_regularization(utilities, chosen_output_qvals, t_env)
-            loss = coeff * reg_loss + (1 - coeff) * loss
             self.logger.log_stat("regularizing_loss", reg_loss.item(), t_env)
+
+            # Comupte the total loss
+            loss = coeff * reg_loss + (1 - coeff) * loss
 
         # Optimise
         self.optimiser.zero_grad()
@@ -337,8 +354,9 @@ class QLearner:
                 q_tot = []
                 for agent1_act, agent2_act in [(0, 0), (0, 1), (1, 0), (1, 1)]:
                     utilities = th.stack([mac_output[:, :, 0, agent1_act], mac_output[:, :, 1, agent2_act]], dim=2)
+                    print(f"U1, U2: for a1={agent1_act}, a2={agent2_act}:\t{utilities}")
                     q_values = self.mixer(utilities, batch["state"][:1, :1], obs=None)
-                    # print(f"Q1, Q2: for a1={agent1_act}, a2={agent2_act}:\t{q_values}")
+                    print(f"Q1, Q2: for a1={agent1_act}, a2={agent2_act}:\t{q_values}")
                     q_tot.append(th.sum(q_values))
                 print(f"{q_tot[0]}\t{q_tot[1]}\n{q_tot[2]}\t{q_tot[3]}")
 
