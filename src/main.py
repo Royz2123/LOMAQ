@@ -82,10 +82,12 @@ def single_run(env_name, alg_name, override_config=None, test_num=None, run_num=
             config_dict["device"] = "cuda"
     print(f"Running the test on device: {config_dict['device']}")
 
-    # setup logger and wandb
+    # Setup logger and wandb. Modify current run name
     logger_obj = Logger(logger)
+    curr_run_name = run_name(env_name, alg_name, test_num, run_num)
     if not config_dict["human_mode"]:
-        logger_obj.setup_wandb(config=config_dict, run_name=run_name(env_name, alg_name, test_num, run_num))
+        curr_run_name = logger_obj.setup_wandb(config=config_dict, run_name=curr_run_name)
+    config_dict["run_name"] = curr_run_name
 
     # Run the current test
     run.run_sequential(args=SN(**config_dict), logger=logger_obj)

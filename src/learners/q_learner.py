@@ -310,7 +310,7 @@ class QLearner:
 
             # Visualize Q values if necessary (mostly for the payoff matrix enviroment)
             if getattr(self.args, "display_q_values", False):
-                print(f"Q Values: ")
+                print(f"Q Values for {self.args.run_name}")
                 mac_output = mac_out[:1, :1]
                 q_tot = []
                 for agent1_act, agent2_act in [(0, 0), (0, 1), (1, 0), (1, 1)]:

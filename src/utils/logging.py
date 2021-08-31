@@ -43,6 +43,7 @@ class Logger:
             self.wandb_run.save()
 
         self.use_wandb = True
+        return self.wandb_run.name
 
     def new_run_wandb(self):
         if self.use_wandb and self.wandb_run is not None:
