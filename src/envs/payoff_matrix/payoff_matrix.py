@@ -45,8 +45,8 @@ class MatrixEnv(MultiAgentEnv):
                 [1, 2],
             ])
             self.r_2 = np.array([
-                [1, 2],
-                [2, 1],
+                [1, 3],
+                [3, 1],
             ])
 
         self.payoff_matrix = self.r_1 + self.r_2
