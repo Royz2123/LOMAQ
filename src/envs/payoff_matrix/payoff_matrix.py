@@ -10,6 +10,7 @@ class MatrixEnv(MultiAgentEnv):
             self,
             a=2.0,
             episode_limit=2,
+            reward_setup=0,
             seed=None,
             exp_logger=None,
             learner_name="default_learner",
@@ -20,22 +21,34 @@ class MatrixEnv(MultiAgentEnv):
         self.episode_limit = episode_limit
         self.episode_steps = 0
 
-        self.r_1 = np.array([
-            [1, 0.5 * a],
-            [1, a],
-        ])
-        self.r_2 = np.array([
-            [a, 0.5 * a],
-            [0, 0],
-        ])
-        # self.r_1 = np.array([
-        #     [2, 1],
-        #     [1, 2],
-        # ])
-        # self.r_2 = np.array([
-        #     [2, 1],
-        #     [1, 2],
-        # ])
+        if reward_setup == 0:
+            self.r_1 = np.array([
+                [1, 0.5 * a],
+                [1, a],
+            ])
+            self.r_2 = np.array([
+                [a, 0.5 * a],
+                [0, 0],
+            ])
+        elif reward_setup == 1:
+            self.r_1 = np.array([
+                [0, 1],
+                [1, 2],
+            ])
+            self.r_2 = np.array([
+                [2, 1],
+                [1, 1],
+            ])
+        elif reward_setup == 2:
+            self.r_1 = np.array([
+                [2, 1],
+                [1, 2],
+            ])
+            self.r_2 = np.array([
+                [1, 2],
+                [2, 1],
+            ])
+
         self.payoff_matrix = self.r_1 + self.r_2
 
         self.state = np.ones(2)

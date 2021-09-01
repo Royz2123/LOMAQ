@@ -26,6 +26,7 @@ override:
   agent: "ff"
   mac: "hetro_mac"
   env_args:
+    reward_setup: 0
     a: 3.0
     episode_limit: 20
 
