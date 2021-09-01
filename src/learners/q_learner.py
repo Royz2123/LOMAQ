@@ -307,7 +307,7 @@ class QLearner:
             if getattr(self.args, "sample_utilities", False):
                 n_agents = utilities.shape[-1]
                 copied_utilities = utilities.cpu().detach().numpy()
-                flattened_utilities = np.reshape(copied_utilities, shape=(-1, n_agents))
+                flattened_utilities = np.reshape(copied_utilities, (-1, n_agents))
                 sampled_utilities = th.tensor(np.random.uniform(
                     low=[np.min(flattened_utilities[:, i]) for i in range(n_agents)],
                     high=[np.max(flattened_utilities[:, i]) for i in range(n_agents)],
