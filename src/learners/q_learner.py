@@ -306,7 +306,7 @@ class QLearner:
             # they imply. This creates a more uniform punishment for the gradient of Q by U
             if getattr(self.args, "sample_utilities", False):
                 n_agents = utilities.shape[-1]
-                flattened_utilities = th.reshape(utilities, shape=(-1, n_agents)).detach().numpy()
+                flattened_utilities = th.reshape(utilities, shape=(-1, n_agents)).cpu().detach().numpy()
                 sampled_utilities = th.tensor(np.random.uniform(
                     low=[np.min(flattened_utilities[:, i]) for i in range(n_agents)],
                     high=[np.max(flattened_utilities[:, i]) for i in range(n_agents)],
