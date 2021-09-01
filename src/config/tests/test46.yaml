@@ -12,7 +12,7 @@ override:
   # Constant changes
   monotonicity_method: "weights"
   mac: "basic_mac"
-  epsilon_anneal_time: 150000
+  epsilon_anneal_time: 100000
   epsilon_finish: 0.05
   env_args:
     num_agents: 2
@@ -23,7 +23,7 @@ override:
       landmark_spawn_radius: 0.02
 
       reward:
-        landmark_occupant_coeff: [ [ 1.0, 3.0 ] ]
+        landmark_occupant_coeff: [ [ 1.0, 2.5 ] ]
         agent_radius: 0.1
         landmark_radius: 0.1
 
