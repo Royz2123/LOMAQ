@@ -15,7 +15,7 @@ local_observer: True
 l_params:
   start_depth_l: 0
   growth_jump: 2
-  growth_type: "constant"   # can be either linear, expontent or constant
+  growth_type: "constant"   # can be either linear, exponent or constant
   update_type: "hard"     # can be either hard or soft
   update_interval_t: 100000
 

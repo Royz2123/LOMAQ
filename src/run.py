@@ -219,7 +219,8 @@ def run_sequential(args, logger):
                 # Last batch for this round, save reward decomposition model & display results
                 if reward_update_idx == args.reward_updates_per_batch - 1:
                     # Visualize the reward models
-                    decompose.visualize_decomposer_2d(args.reward_decomposer, reward_sample, env_name=args.env)
+                    # decompose.visualize_decomposer_2d(args.reward_decomposer, reward_sample, env_name=args.env)
+                    decompose.visualize_decomposer_1d(args.reward_decomposer, reward_sample, env_name=args.env)
 
                     # Save models to default directory
                     args.reward_decomposer.save_models()
