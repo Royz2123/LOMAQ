@@ -1,0 +1,42 @@
+# Test 35 tests cooperation using the specific multi particle enviroment
+
+num_runs: 6
+env_name: multi_particle
+alg_name: [ local_qmix,qmix,iql_local,iql,vdn,qtran ]
+
+override:
+  # Things that tend to get change in the local machine, just override
+  test_nepisode: 10
+  human_mode: False
+
+  # Constant changes
+  monotonicity_method: "weights"
+  mac: "hetro_mac"
+  epsilon_anneal_time: 150000
+  epsilon_finish: 0.05
+  env_args:
+    num_agents: 2
+    num_landmarks: 2
+
+    rules:
+      agent_spawn_radius: 0.4
+      landmark_spawn_radius: 0.4
+
+      reward:
+        landmark_occupant_coeff: [ [ 1.0, 3.0 ] ]
+        agent_radius: 0.1
+        landmark_radius: 0.1
+
+      # bounding params
+      bounding:
+        bound_dist: 0.4
+
+      obs:
+        landmarks: "all"
+        agents: "all"
+        show_num_agents_on_landmark: False
+
+      grid:
+        use_grid: False
+
+

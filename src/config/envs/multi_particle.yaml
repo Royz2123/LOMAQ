@@ -6,6 +6,9 @@ env_args:
   num_agents: 5
   num_landmarks: 1
   rules:
+    agent_spawn_radius: 1.0
+    landmark_spawn_radius: 1.0
+
     reward:
       landmark_radius: 0.1
       agent_radius: 0.15

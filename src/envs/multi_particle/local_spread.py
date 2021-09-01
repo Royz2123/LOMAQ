@@ -180,7 +180,11 @@ class LocalSpreadScenario(BaseScenario):
         else:
             bound_center_pos = np.zeros(shape=(world.dim_p,))
             entity_base_pos = bound_center_pos.copy()
-            spawn_rad = 1
+
+            if is_landmark:
+                spawn_rad = self.params["rules"]["landmark_spawn_radius"]
+            else:
+                spawn_rad = self.params["rules"]["agent_spawn_radius"]
 
         # set initial pos for agents only
         if not is_landmark:
