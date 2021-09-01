@@ -23,6 +23,6 @@ class RNNAgent(nn.Module):
         q = self.fc2(h)
 
         if getattr(self.args, "regularization_clamp", False):
-            q = th.clamp(q, min=0, max=1)
+            q = th.clamp(q, min=-1, max=1)
 
         return q, h

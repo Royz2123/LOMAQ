@@ -1,6 +1,6 @@
 # Test 65 tests scalability for the multi_particle enviroment
 
-num_runs: 7
+num_runs: 6
 env_name: multi_cart
 alg_name: [ local_qmix,local_qmix,qmix,iql_local,iql,vdn,qtran ]
 
@@ -10,7 +10,7 @@ override:
   human_mode: False
 
   # Dynamic changes
-  monotonicity_method: [ "regularization", "weights", "weights", "weights", "weights" ,"weights", "weights" ]
+  monotonicity_method: [ "weights", "weights", "weights", "weights" ,"weights", "weights" ]
 
   # Constant changes
   monotonicity_loss_coeff: 0.5

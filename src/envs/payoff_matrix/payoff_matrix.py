@@ -28,14 +28,14 @@ class MatrixEnv(MultiAgentEnv):
             [a, 0.5 * a],
             [0, 0],
         ])
-        self.r_1 = np.array([
-            [2, 1],
-            [1, 2],
-        ])
-        self.r_2 = np.array([
-            [2, 1],
-            [1, 2],
-        ])
+        # self.r_1 = np.array([
+        #     [2, 1],
+        #     [1, 2],
+        # ])
+        # self.r_2 = np.array([
+        #     [2, 1],
+        #     [1, 2],
+        # ])
         self.payoff_matrix = self.r_1 + self.r_2
 
         self.state = np.ones(2)
