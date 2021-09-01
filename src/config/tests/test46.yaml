@@ -11,7 +11,7 @@ override:
 
   # Constant changes
   monotonicity_method: "weights"
-  mac: "hetro_mac"
+  mac: "basic_mac"
   epsilon_anneal_time: 150000
   epsilon_finish: 0.05
   env_args:
