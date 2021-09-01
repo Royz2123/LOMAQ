@@ -10,7 +10,7 @@ override:
   human_mode: False
 
   # Constant changes
-  monotonicity_method: "regularization"     # all the other test have been done with weights ecept for 46c
+  monotonicity_method: "weights"            # all the other test have been done with weights ecept for 46c
   mac: "hetro_mac"                          # all the other tests have been done with basic_mac except for 46b and 46c
   epsilon_anneal_time: 150000               # all the other have been done with epsilon_anneal_time of 100000
   epsilon_finish: 0.05
