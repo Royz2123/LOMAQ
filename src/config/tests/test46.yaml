@@ -7,7 +7,7 @@ alg_name: [ local_qmix,qmix,iql_local,iql,vdn,qtran ]
 override:
   # Things that tend to get change in the local machine, just override
   test_nepisode: 10
-  human_mode: True
+  human_mode: False
 
   # Constant changes
   monotonicity_method: "weights"
