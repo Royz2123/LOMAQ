@@ -1,0 +1,35 @@
+# Test 75 tests the limits of reward decomposition
+
+num_runs: 6
+env_name: multi_cart
+alg_name: local_qmix
+
+override:
+  # Things that tend to get change in the local machine, just override
+  test_nepisode: 10
+  human_mode: True
+
+  # Dynamic changes
+  env_args:
+    num_cartpoles: 2
+
+  # Constant changes
+  # Reward decomposition variables
+  decompose_reward: True
+  reward_parameter_sharing: True
+  reward_batch_size: 100
+  reward_updates_per_batch: 100
+  reward_diff_threshold: 0.05
+  assume_binary_reward: False
+  reward_acc: 0.999
+  regularizing_weight: 0.00005
+  reward_beta2: 1
+  reward_l: 1
+
+  monotonicity_method: "weights"
+  parameter_sharing: True
+  depth_k: 1
+  t_max: 4000000
+
+
+

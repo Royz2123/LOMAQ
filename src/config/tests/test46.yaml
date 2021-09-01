@@ -12,7 +12,7 @@ override:
   # Constant changes
   monotonicity_method: "weights"
   mac: "basic_mac"
-  epsilon_anneal_time: 50000
+  epsilon_anneal_time: 100000
   epsilon_finish: 0.05
 
   t_max: 500000
