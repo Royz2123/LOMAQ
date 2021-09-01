@@ -12,10 +12,10 @@ override:
   # Constant changes
   monotonicity_method: "weights"            # all the other test have been done with weights ecept for 46c
   mac: "hetro_mac"                          # all the other tests have been done with basic_mac except for 46b and 46c
-  epsilon_anneal_time: 150000               # all the other have been done with epsilon_anneal_time of 100000
+  epsilon_anneal_time: 2000000              # all the other have been done with epsilon_anneal_time of 100000
   epsilon_finish: 0.05
 
-  t_max: 500000
+  t_max: 1000000
 
   env_args:
     num_agents: 2
@@ -46,6 +46,6 @@ override:
         use_manual: True
 
         agents: [ [ 0, 0.2 ], [ 0, -0.2 ] ]
-        landmarks: [ [ -0.28, 0 ], [ 0.28, 0 ] ]
+        landmarks: [ [ -0.25, 0 ], [ 0.25, 0 ] ]
 
 
