@@ -2,7 +2,7 @@
 
 num_runs: 6
 env_name: multi_cart
-alg_name: [ local_qmix,local_qmix,qmix,iql_local,iql,vdn,qtran ]
+alg_name: [ local_qmix,qmix,iql_local,iql,vdn,qtran ]
 
 override:
   # Things that tend to get change in the local machine, just override

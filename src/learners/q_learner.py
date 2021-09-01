@@ -286,7 +286,7 @@ class QLearner:
             target_output_qvals = self.target_mixer(target_max_qvals, batch["state"][:, 1:], obs=batch["obs"][:, 1:])
         else:
             chosen_output_qvals = chosen_action_qvals
-            target_output_qvals = chosen_action_qvals
+            target_output_qvals = target_max_qvals
 
         # Shape debugging purposes
         # print(f"Target Max qvals: {target_max_qvals.shape}")
