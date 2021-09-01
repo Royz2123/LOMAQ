@@ -318,7 +318,7 @@ class QLearner:
             else:
                 reg_loss = self.compute_regularization(utilities, chosen_output_qvals, t_env)
 
-            coeff = self.args.monotonicity_loss_coeff
+            coeff = self.args.monotonicity_coeff
             self.logger.log_stat("regularizing_loss", reg_loss.item(), t_env)
 
             # Comupte the total loss

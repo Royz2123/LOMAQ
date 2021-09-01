@@ -59,7 +59,7 @@ depth_k: 1
 # method, that adds a loss factor for negative gradients.
 p_enforce: "full"                        # What partition of monotonicity should we enforce here
 monotonicity_method: "regularization"    # method can be either "weights" or "regularization"
-monotonicity_coefff: 0.5
+monotonicity_coeff: 0.5
 
 ### GCN parameters
 use_gcn: False
