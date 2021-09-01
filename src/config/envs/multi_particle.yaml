@@ -69,10 +69,6 @@ env_args:
       # how much should the odd cols of agents be offsetted in the y direction
       grid_offset: 0
 
-      # spawn radius for both the agents and the landmarks
-      agent_spawn_radius: 0
-      landmark_spawn_radius: 1.0
-
       # Where should each landmark spawn relative to it's bound center?
       landmark_spawn_offset_x: 0
       landmark_spawn_offset_y: 0
@@ -81,6 +77,12 @@ env_args:
       agent_spawn_offset_x: 0
       agent_spawn_offset_y: 0
 
+    manual:
+      # Allows the setting of entity base positions according to a supplied list
+      use_manual: False
+
+      agents: [[0, 0.2], [0, -0.2]]
+      landmarks: [[-0.2, 0], [0.2, 0]]
 
 test_greedy: True
 test_nepisode: 1
