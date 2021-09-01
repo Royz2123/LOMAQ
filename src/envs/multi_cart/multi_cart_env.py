@@ -147,7 +147,7 @@ class MultiCartPoleEnv(MultiAgentEnv):
 
         # get rewards for this run
         rewards = [not cartpole.is_done() for cartpole in self.cartpoles]
-        cont_rewards = [cartpole.cont_reward() for cartpole in self.cartpoles]
+        # cont_rewards = [cartpole.cont_reward() for cartpole in self.cartpoles]
 
         # for endless mode, punish cartpoles more harshly so the average reward is more affected
         if self.params["rules"]["terminate"] == "endless":
@@ -199,7 +199,7 @@ class MultiCartPoleEnv(MultiAgentEnv):
             self.steps_beyond_done += 1
 
         # return results
-        rewards = cont_rewards  # do continuous rewards for now
+        # rewards = cont_rewards  # do continuous rewards for now
         return rewards, done, {}
 
     def get_info(self):

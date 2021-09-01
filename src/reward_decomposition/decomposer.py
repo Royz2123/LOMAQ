@@ -65,7 +65,7 @@ class RewardDecomposer:
         # if self.args.obs_agent_id:
         #     input_shape += self.n_agents
 
-        input_shape = 1
+        # input_shape = 1
 
         return input_shape
 
@@ -79,8 +79,8 @@ class RewardDecomposer:
         agent_input = list()
 
         # observe the last state
-        # agent_input.append(batch["obs"][ep_idx, t_idx, agent_idx])
-        agent_input.append(batch["obs"][ep_idx, t_idx, agent_idx][-1:])
+        agent_input.append(batch["obs"][ep_idx, t_idx, agent_idx])
+        # agent_input.append(batch["obs"][ep_idx, t_idx, agent_idx][-1:])
 
         # observe the last action
         # agent_input.append(batch["actions_onehot"][ep_idx, t_idx, agent_idx])
@@ -257,10 +257,10 @@ class RewardGroup(nn.Module):
             # of size k, the output shape will be 2*k + 1, except for the first one.
             # For the sake of convenience, we allow single agent reward functions to be -1 as well
             if self.num_reward_agents == 1:
-                output_vals = [-1, -0.5, 0, 0.5, 1]
+                output_vals = [0, 1]
             else:
                 output_vals = list(range(-self.num_reward_agents, self.num_reward_agents + 1))
-                output_vals = [-1, -0.5, 0, 0.5, 1]
+                # output_vals = [-1, -0.5, 0, 0.5, 1]
             output_shape = len(output_vals)
         return output_shape, output_vals
 

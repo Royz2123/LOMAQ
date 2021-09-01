@@ -53,6 +53,8 @@ def train_decomposer(decomposer, batch, reward_optimizer):
         # compute the loss
         output = compute_loss(local_rewards, global_rewards, mask)
 
+    print(output)
+
     # Now add the regularizing loss
     output += decomposer.compute_regularization(raw_outputs)
 
@@ -109,12 +111,12 @@ def build_reward_data(batch, include_last=True):
     # For now, define the input for the reward decomposition network as just the observations
     # note that some of these aren't relevant, so we additionally supply a mask for pairs that shouldn't be learnt
     if include_last:
-        inputs = batch["obs"][:, :, :, -1:]
+        inputs = batch["obs"][:, :, :, :]
         outputs = local_to_global(batch["reward"])
         truth = batch["reward"]
         mask = batch["filled"].float()
     else:
-        inputs = batch["obs"][:, :-1, :, -1:]
+        inputs = batch["obs"][:, :-1, :, :]
         outputs = local_to_global(batch["reward"][:, :-1])
         truth = batch["reward"][:, :-1]
         mask = batch["filled"][:, :-1].float()
@@ -218,7 +220,7 @@ def create_example_inputs_multi_cart(example_input):
         temp_input = th.tensor(example_input)
         temp_input[2] = x_val
         example_inputs.append(temp_input)
-    return xs, example_inputs
+    return xs, th.stack(example_inputs)
 
 
 # Returns the theta coordinate
@@ -238,22 +240,29 @@ def visualize_decomposer_1d(decomposer, batch, env_name="multi_particle"):
     example_input = decomposer.build_input(batch, 0, 0, 0)
 
     if env_name == "multi_particle":
-        xs, example_inputs = create_example_inputs_multi_particle(example_input)
+        example_input_method = create_example_inputs_multi_particle
     elif env_name == "multi_cart":
-        xs, example_inputs = create_example_inputs_multi_cart(example_input)
+        example_input_method = create_example_inputs_multi_cart
     else:
         print("Can't visualize decomposer for this enviroment...")
         return
 
-    ys = [decomposer.single_network_forward(reward_input) for reward_input in example_inputs]
+    xs, example_inputs = example_input_method(example_input)
 
-    # If this is a classification problem, then change probability to class
-    if decomposer.args.assume_binary_reward:
-        # class idx is equal to the reward for single
-        ys = [decomposer.probs_to_class_idx(reward_prob) for reward_prob in ys]
+    # Reshape example_inputs so it looks like a batch
+    example_inputs = th.reshape(example_inputs, shape=(1, example_inputs.shape[0], 1, example_inputs.shape[1]))
 
-    ys = [reward_prob.detach().numpy() for reward_prob in ys]
+    # Duplicate along agent axis so forward knows how to eat this
+    example_inputs = example_inputs.repeat(1, 1, decomposer.n_agents, 1)
 
+    # Obtain local rewards for visualizations
+    raw_outputs = decomposer.forward(example_inputs)
+    agent_rewards = decomposer.convert_raw_outputs(raw_outputs, output_type=AGENT_REWARDS)
+
+    ys = [agent_reward.detach().numpy() for agent_reward in agent_rewards[0, :, 0]]
+
+    plt.close("all")
+    visualize_batch_1d(batch, env_name)
     draw_1d_updating(xs, ys)
 
 
