@@ -6,12 +6,12 @@ alg_name: [ local_qmix,qmix,iql_local,iql,vdn,qtran ]
 
 override:
   # Things that tend to get change in the local machine, just override
-  test_nepisode: 1
-  human_mode: True
+  test_nepisode: 10
+  human_mode: False
 
   # Constant changes
   monotonicity_method: "weights"
-  mac: "basic_mac"
+  mac: "hetro_mac"
   epsilon_anneal_time: 150000
   epsilon_finish: 0.05
   env_args:
