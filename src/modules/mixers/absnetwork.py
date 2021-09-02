@@ -26,7 +26,7 @@ class AbsNetwork(nn.Module):
 
             # Add the layer
             self.layers.append((
-                nn.Parameter(th.randn((layer_input_size, layer_output_size))).to(self.args.device),
+                nn.Parameter(th.randn((layer_input_size, layer_output_size)).to(self.args.device)),
                 nn.Parameter(th.zeros((layer_output_size,)).to(self.args.device))
             ))
 
