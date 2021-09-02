@@ -147,6 +147,8 @@ class SubMixer(nn.Module):
         else:
             self.network = nn.Sequential(
                 nn.Linear(self.input_size, self.hidden_size),
+                nn.ReLU(),
+                nn.Linear(self.hidden_size, self.hidden_size),
                 nn.Tanh(),
                 nn.Linear(self.hidden_size, self.output_size)
             )
