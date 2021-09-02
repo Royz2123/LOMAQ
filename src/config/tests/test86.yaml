@@ -14,10 +14,10 @@ override:
   monotonicity_network: "abs"
 
   # Constant changes
-  submixer_parameter_sharing: [True, True, False]
-  submixer_non_share_depth: [0, 2, 0]
-  value_depth_k: [0, 1, 2]
-  reward_depth_k: 0
+  submixer_parameter_sharing: True
+  submixer_non_share_depth: 2
+  value_depth_k: 1
+  reward_depth_k: [0, 1, 2]
 
   mac: "basic_mac"
   epsilon_anneal_time: 50000
