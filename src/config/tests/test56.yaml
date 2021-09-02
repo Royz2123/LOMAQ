@@ -1,0 +1,55 @@
+# Test 56 tests scalability for the multi_particle enviroment
+
+num_runs: 6
+env_name: multi_particle
+alg_name: [ local_qmix,qmix,iql_local,iql,vdn,qtran ]
+
+override:
+  # Things that tend to get change in the local machine, just override
+  test_nepisode: 10
+  human_mode: False
+
+  # Dynamic changes
+  monotonicity_method: [ "weights", "weights", "weights", "weights" ,"weights", "weights" ]
+
+  # Constant changes
+  # parameter sharing for the subnet (only relevant for symmetric problems)
+  parameter_sharing: True
+  depth_k: 2
+  mac: "basic_mac"
+  epsilon_anneal_time: 200000
+  t_max: 3000000
+
+  env_args:
+    rules:
+      obs:
+        agents: "none"
+        landmarks: "local"
+        show_num_agents_on_landmark: True
+
+      grid:
+        use_grid: True
+
+        # num of agents in every direction
+        num_x_agents: 15
+        num_y_agents: 1
+
+        # distances between the gridded agent's bounds
+        grid_dist_x: 0.75
+        grid_dist_y: 2.10
+
+        # how much should the odd cols of agents be offsetted in the y direction
+        grid_offset: 0
+
+        # spawn radius for both the agents and the landmarks
+        agent_spawn_radius: 0.5
+        landmark_spawn_radius: 1.0
+
+        # Where should each landmark spawn relative to it's bound center?
+        landmark_spawn_offset_x: 0
+        landmark_spawn_offset_y: 0
+
+        # Where should each agent spawn relative to it's bound center?
+        agent_spawn_offset_x: 0
+        agent_spawn_offset_y: 0
+
