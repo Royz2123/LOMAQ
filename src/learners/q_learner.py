@@ -93,7 +93,7 @@ class QLearner:
         # for every depth LNIT
         # first, get relevant reward neighborhoods
         reward_nbrhoods = self.args.graph_obj.get_nbrhoods(depth=getattr(self.args, "reward_depth_k", 0))
-        weights = th.FloatTensor([1 / len(nbrhood) for nbrhood in reward_nbrhoods])
+        weights = th.FloatTensor([1 / len(nbrhood) for nbrhood in reward_nbrhoods], device=self.args.device)
         weights = weights.expand_as(rewards)
         glocal_rewards = rewards * weights
 
