@@ -20,7 +20,7 @@ override:
   reward_depth_k: [0, 1, 0, 0, 0, 0, 0]
 
   mac: "basic_mac"
-  epsilon_anneal_time: 100000
+  epsilon_anneal_time: 50000
   t_max: 3000000
 
   env_args:
