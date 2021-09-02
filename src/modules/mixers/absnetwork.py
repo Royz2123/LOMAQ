@@ -15,16 +15,15 @@ class AbsNetwork(nn.Module):
         self.output_size = output_size
         self.total_layers = total_layers
 
-        self.layers = []
+        self.weights = nn.ParameterList()
+        self.biases = nn.ParameterList()
 
         for layer_idx in range(total_layers):
             layer_input_size, layer_output_size = self.get_layer_dim(layer_idx)
 
             # Add the layer
-            self.layers.append((
-                nn.Parameter(th.randn((layer_input_size, layer_output_size)).to(self.args.device)),
-                nn.Parameter(th.zeros((layer_output_size,)).to(self.args.device))
-            ))
+            self.weights.append(nn.Parameter(th.randn((layer_input_size, layer_output_size)).to(self.args.device)))
+            self.biases.append(nn.Parameter(th.zeros((layer_output_size,)).to(self.args.device)))
 
     def get_layer_dim(self, layer_idx):
         layer_input_size = self.hidden_size
@@ -40,10 +39,10 @@ class AbsNetwork(nn.Module):
         batch_size = regular_input.size(0)
         curr_input = regular_input.view(-1, 1, self.input_size)
 
-        for layer_idx, layer in enumerate(self.layers):
+        for layer_idx in range(self.total_layers):
             layer_input_size, layer_output_size = self.get_layer_dim(layer_idx)
-            w = F.relu(layer[0]).view(-1, layer_input_size, layer_output_size)
-            b = layer[1].view(-1, 1, layer_output_size)
+            w = F.relu(self.weights[layer_idx]).view(-1, layer_input_size, layer_output_size)
+            b = self.biases[layer_idx].view(-1, 1, layer_output_size)
 
             # repeat both biases and weights to fit size
             w = w.repeat(curr_input.shape[0], 1, 1)
