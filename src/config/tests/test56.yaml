@@ -1,8 +1,8 @@
 # Test 56 tests scalability for the multi_particle enviroment
 
-num_runs: 6
+num_runs: 7
 env_name: multi_particle
-alg_name: [ local_qmix,qmix,iql_local,iql,vdn,qtran ]
+alg_name: [ local_qmix,local_qmix,qmix,iql_local,iql,vdn,qtran ]
 
 override:
   # Things that tend to get change in the local machine, just override
@@ -10,15 +10,18 @@ override:
   human_mode: False
 
   # Dynamic changes
-  monotonicity_method: [ "weights", "weights", "weights", "weights" ,"weights", "weights" ]
+  monotonicity_method: "regularization"
+  p_enforce: "full"
+  monotonicity_coeff: 0.3
 
   # Constant changes
   submixer_parameter_sharing: True
   submixer_non_share_depth: 2
-  depth_k: 1
+  value_depth_k: 1
+  reward_depth_k: [0, 1, 0, 0, 0, 0, 0]
 
   mac: "basic_mac"
-  epsilon_anneal_time: 200000
+  epsilon_anneal_time: 100000
   t_max: 3000000
 
   env_args:
