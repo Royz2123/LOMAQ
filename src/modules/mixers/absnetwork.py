@@ -42,7 +42,7 @@ class AbsNetwork(nn.Module):
 
         for layer_idx, layer in enumerate(self.layers):
             layer_input_size, layer_output_size = self.get_layer_dim(layer_idx)
-            w = th.abs(layer[0]).view(-1, layer_input_size, layer_output_size)
+            w = F.relu(layer[0]).view(-1, layer_input_size, layer_output_size)
             b = layer[1].view(-1, 1, layer_output_size)
 
             # repeat both biases and weights to fit size
