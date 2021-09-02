@@ -51,7 +51,9 @@ reward_l: 2
 reward_clamp: False
 
 # parameter sharing for the subnet (only relevant for symmetric problems)
-parameter_sharing: False
+submixer_parameter_sharing: False
+submixer_non_share_depth: 1
+
 depth_k: 1
 
 # How do we enforce monotonicity constraints? In QMIX, this was simply done by non-negative weights. Since this

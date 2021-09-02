@@ -36,12 +36,13 @@ class LocalQMixer(nn.Module):
         # doing this manually, I hope this will work now.
 
         # parameter sharing
-        sharing_submixers = self.get_sharing_submixers()
+        submixer_non_share_depth = getattr(self.args, "submixer_non_share_depth", 0)
+        sharing_submixers = self.get_sharing_submixers(submixer_non_share_depth)
 
         # We assume that every agent has the same subgraph apart from the non-sharing submixers
         shared_module = None
-        if self.args.parameter_sharing and len(sharing_submixers) > 0:
-            shared_module = SharedSubMixer(args=args, nbrhds=self.nbrhds, shared_idx_example=self.depth_k)
+        if self.args.submixer_parameter_sharing and len(sharing_submixers) > 0:
+            shared_module = SharedSubMixer(args=args, nbrhds=self.nbrhds, shared_idx_example=submixer_non_share_depth)
 
         # create the module_list base on who wants to share and who doesn't
         module_list = []
@@ -57,17 +58,17 @@ class LocalQMixer(nn.Module):
 
         self.sub_mixers = nn.ModuleList(module_list)
 
-    def get_sharing_submixers(self):
+    def get_sharing_submixers(self, submixer_non_share_depth):
         # Here we want to return all the indices of submixers that can share parameters
         all_submixers = list(range(self.args.n_agents))
-        num_non_sharing = 2 * self.depth_k
+        num_non_sharing = 2 * submixer_non_share_depth
 
         # No point in sharing parameters if we only have "edges" submixers
         # We should have at least 2 sharing submixers in order for this to be useful
         if len(all_submixers) <= (num_non_sharing + 1):
             return []
         else:
-            return all_submixers[self.depth_k:-self.depth_k]
+            return all_submixers[submixer_non_share_depth:-submixer_non_share_depth]
 
     def forward(self, agent_qs, states, obs=None):
         qs = []
