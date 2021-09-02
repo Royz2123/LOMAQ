@@ -13,9 +13,11 @@ override:
   monotonicity_method: [ "weights", "weights", "weights", "weights" ,"weights", "weights" ]
 
   # Constant changes
-  mac: "basic_mac"
-  parameter_sharing: True
+  submixer_parameter_sharing: True
+  submixer_non_share_depth: 1
   depth_k: 1
+
+  mac: "basic_mac"
   t_max: 4000000
 
   env_args:

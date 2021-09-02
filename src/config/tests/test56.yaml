@@ -13,11 +13,10 @@ override:
   monotonicity_method: [ "weights", "weights", "weights", "weights" ,"weights", "weights" ]
 
   # Constant changes
-  # parameter sharing for the subnet (only relevant for symmetric problems)
   submixer_parameter_sharing: True
   submixer_non_share_depth: 2
-
   depth_k: 1
+
   mac: "basic_mac"
   epsilon_anneal_time: 200000
   t_max: 3000000
