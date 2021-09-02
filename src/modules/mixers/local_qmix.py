@@ -7,6 +7,7 @@ import numpy as np
 # So what does the LocalQMixer look like coceptually?
 # We have a mixing layer that redirects inputs based on the graph and k
 # and then we have an array of submixers
+from modules.mixers.absnetwork import AbsNetwork
 from modules.mixers.hypernetwork import HyperNetwork
 
 
@@ -111,7 +112,9 @@ class SubMixer(nn.Module):
         self.args = args
         self.state_dim = int(np.prod(args.state_shape))
 
-        self.use_hyper_network = getattr(args, "monotonicity_method", "weights") == "weights"
+        self.use_hyper_network = getattr(args, "monotonicity_network", "hyper") == "hyper"
+        self.use_abs_network = getattr(args, "monotonicity_network", "hyper") == "abs"
+        self.positive_weights = getattr(args, "monotonicity_method", "weights") == "weights"
 
         # This part is critical for the submixers, could be the source of problems!
         # In the original architecture, the mixer (i.e: submixer) recieves the inputs
@@ -130,20 +133,31 @@ class SubMixer(nn.Module):
         # breaking the MLP to hypernetworks for deriving the weights and biases
         # We will implement a small 2-layer network for every submixer
         # The dimensions will be (feature_size, sub_mixer_embed_dim, 1)
-        if self.use_hyper_network:
-            self.hyper_input_size = int(np.prod(args.state_shape))
-            self.hyper_hidden_size = self.args.hypernet_embed
-            self.hyper_layers = getattr(args, "hypernet_layers", 1)
+        if self.positive_weights:
+            if self.use_hyper_network:
+                self.hyper_input_size = int(np.prod(args.state_shape))
+                self.hyper_hidden_size = self.args.hypernet_embed
+                self.hyper_layers = getattr(args, "hypernet_layers", 1)
 
-            self.hyper_network = HyperNetwork(
-                args,
-                self.hyper_input_size,
-                self.input_size,
-                self.hyper_hidden_size,
-                self.hidden_size,
-                self.output_size,
-                self.hyper_layers,
-            )
+                self.hyper_network = HyperNetwork(
+                    args,
+                    self.hyper_input_size,
+                    self.input_size,
+                    self.hyper_hidden_size,
+                    self.hidden_size,
+                    self.output_size,
+                    self.hyper_layers,
+                )
+            elif self.use_abs_network:
+                self.abs_network = AbsNetwork(
+                    args,
+                    self.input_size,
+                    self.hidden_size,
+                    self.output_size,
+                    2
+                )
+            else:
+                raise Exception("Unrecognized monotonicity_network")
         else:
             self.network = nn.Sequential(
                 nn.Linear(self.input_size, self.hidden_size),
@@ -170,6 +184,8 @@ class SubMixer(nn.Module):
 
         if self.use_hyper_network:
             q_i = self.hyper_network(utilities, states)
+        elif self.use_abs_network:
+            q_i = self.abs_network(utilities)
         else:
             q_i = self.network(utilities)
 

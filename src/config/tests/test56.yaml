@@ -10,9 +10,8 @@ override:
   human_mode: False
 
   # Dynamic changes
-  monotonicity_method: "regularization"
-  p_enforce: "full"
-  monotonicity_coeff: 0.3
+  monotonicity_method: "weights"
+  monotonicity_network: "abs"
 
   # Constant changes
   submixer_parameter_sharing: True
@@ -35,7 +34,7 @@ override:
         use_grid: True
 
         # num of agents in every direction
-        num_x_agents: 15
+        num_x_agents: 10
         num_y_agents: 1
 
         # distances between the gridded agent's bounds
