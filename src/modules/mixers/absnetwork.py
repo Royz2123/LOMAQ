@@ -13,16 +13,12 @@ class AbsNetwork(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.output_size = output_size
+        self.total_layers = total_layers
 
         self.layers = []
 
-        for i in range(total_layers):
-            layer_input_size = hidden_size
-            layer_output_size = hidden_size
-            if i == 0:
-                layer_input_size = input_size
-            elif i == (total_layers - 1):
-                layer_output_size = output_size
+        for layer_idx in range(total_layers):
+            layer_input_size, layer_output_size = self.get_layer_dim(layer_idx)
 
             # Add the layer
             self.layers.append((
@@ -30,13 +26,33 @@ class AbsNetwork(nn.Module):
                 nn.Parameter(th.zeros((layer_output_size,)).to(self.args.device))
             ))
 
+    def get_layer_dim(self, layer_idx):
+        layer_input_size = self.hidden_size
+        layer_output_size = self.hidden_size
+        if layer_idx == 0:
+            layer_input_size = self.input_size
+        elif layer_idx == (self.total_layers - 1):
+            layer_output_size = self.output_size
+        return layer_input_size, layer_output_size
+
     def forward(self, regular_input):
         # Save batch_size for resizing
         batch_size = regular_input.size(0)
         curr_input = regular_input.view(-1, 1, self.input_size)
 
-        for layer in self.layers:
-            curr_input = th.matmul(curr_input, th.abs(layer[0])) + layer[1]
+        for layer_idx, layer in enumerate(self.layers):
+            layer_input_size, layer_output_size = self.get_layer_dim(layer_idx)
+            w = th.abs(layer[0]).view(-1, layer_input_size, layer_output_size)
+            b = layer[1].view(-1, 1, layer_output_size)
+
+            # repeat both biases and weights to fit size
+            w = w.repeat(curr_input.shape[0], 1, 1)
+            b = b.repeat(curr_input.shape[0], 1, 1)
+
+            curr_input = th.bmm(curr_input, w) + b
+
+            if layer_idx != (self.total_layers - 1):
+                curr_input = F.elu(curr_input)
 
         output = curr_input.view(batch_size, -1, self.output_size)
         return output

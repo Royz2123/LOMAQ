@@ -6,7 +6,7 @@ alg_name: [ local_qmix,local_qmix,qmix,iql_local,iql,vdn,qtran ]
 
 override:
   # Things that tend to get change in the local machine, just override
-  test_nepisode: 10
+  test_nepisode: 1
   human_mode: False
 
   # Dynamic changes
@@ -34,7 +34,7 @@ override:
         use_grid: True
 
         # num of agents in every direction
-        num_x_agents: 10
+        num_x_agents: 4
         num_y_agents: 1
 
         # distances between the gridded agent's bounds
