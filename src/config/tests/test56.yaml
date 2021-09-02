@@ -23,10 +23,6 @@ override:
 
   env_args:
     rules:
-      graph:
-        graph_type: "auto"            # can be either full, auto or empty
-        show_graph: True
-
       obs:
         agents: "none"
         landmarks: "local"

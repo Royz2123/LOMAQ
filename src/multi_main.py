@@ -50,6 +50,7 @@ def main():
     for p in procs:
         p.wait()
 
+
 # This is a module who's goal is to run multiple test in one run
 if __name__ == '__main__':
     main()
