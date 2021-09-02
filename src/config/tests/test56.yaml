@@ -15,7 +15,7 @@ override:
 
   # Constant changes
   submixer_parameter_sharing: True
-  submixer_non_share_depth: 2
+  submixer_non_share_depth: 1
   value_depth_k: 1
   reward_depth_k: [0, 1, 0, 0, 0, 0, 0]
 
@@ -34,11 +34,11 @@ override:
         use_grid: True
 
         # num of agents in every direction
-        num_x_agents: 10
+        num_x_agents: 15
         num_y_agents: 1
 
         # distances between the gridded agent's bounds
-        grid_dist_x: 0.75
+        grid_dist_x: 1.05
         grid_dist_y: 2.10
 
         # how much should the odd cols of agents be offsetted in the y direction
