@@ -71,6 +71,8 @@ class LocalQMixer(nn.Module):
         # We should have at least 2 sharing submixers in order for this to be useful
         if len(all_submixers) <= (num_non_sharing + 1):
             return []
+        elif submixer_non_share_depth == 0:
+            return all_submixers
         else:
             return all_submixers[submixer_non_share_depth:-submixer_non_share_depth]
 
