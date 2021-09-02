@@ -17,8 +17,8 @@ class GraphQMixer(nn.Module):
         # Now optimally we will need a graph dependency between the nodes
         # For now, lets assume that all agents are in a line like in the multi_cart_pole setting
         self.graph_obj = args.graph_obj
-        self.depth_k = int(self.args.depth_k)
-        self.nbrhds = [self.graph_obj.get_nbrhood(agent_index, self.depth_k) for agent_index in range(self.n_agents)]
+        self.value_depth_k = int(self.args.value_depth_k)
+        self.nbrhds = [self.graph_obj.get_nbrhood(agent_index, self.value_depth_k) for agent_index in range(self.n_agents)]
 
         # Create all relevant submodules
         self.mixing_gcn_network = MonotonicGCN(args)

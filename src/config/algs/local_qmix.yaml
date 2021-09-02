@@ -54,7 +54,11 @@ reward_clamp: False
 submixer_parameter_sharing: False
 submixer_non_share_depth: 1
 
-depth_k: 1
+# How exact is every approximation of the value function
+value_depth_k: 1
+
+# Glocal rewards parameters
+reward_depth_k: 0
 
 # How do we enforce monotonicity constraints? In QMIX, this was simply done by non-negative weights. Since this
 # unnecesserily enforces that every Q_i is monotonic as well, we implement monotonicity constraints in a second

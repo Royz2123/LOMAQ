@@ -91,43 +91,38 @@ class QLearner:
         # Q_i's and rewards by looking at that neighborhood in the graph
 
         # for every depth LNIT
-        # first, get relevant indices from the graph
+        # first, get relevant reward neighborhoods
+        reward_nbrhoods = self.args.graph_obj.get_nbrhoods(depth=getattr(self.args, "reward_depth_k", 0))
+        weights = th.FloatTensor([1 / len(nbrhood) for nbrhood in reward_nbrhoods])
+        weights = weights.expand_as(rewards)
+        glocal_rewards = rewards * weights
+
+        # Now get relevant l's, can be with partition also but currently not hooked up to l, NOT USING THIS FEATURE!
+        loss_nbrhoods = self.args.graph_obj.get_nbrhoods(depth=0)
+
         total_loss = 0
-        for depth_info in self.depth_ls:
-            indices = self.args.graph_obj.get_nbrhoods(depth=depth_info["depth_l"])
+        for agent_index in range(self.args.n_agents):
+            local_rewards = glocal_rewards[:, :, reward_nbrhoods[agent_index]]
+            local_rewards = th.sum(local_rewards, dim=-1, keepdims=True)
+            local_terminated = terminated.expand_as(local_rewards)
 
-            for reward_index in range(self.args.n_agents):
-                # Computing the individual LNilT (L_N^l_i(theta))
-                # print(depth_info, agent_index)
+            chosen_action_local_qvals = chosen_action_qvals[:, :, loss_nbrhoods[agent_index]]
+            target_max_local_qvals = target_max_qvals[:, :, loss_nbrhoods[agent_index]]
+            chosen_action_local_qvals = th.sum(chosen_action_local_qvals, dim=-1, keepdims=True)
+            target_max_local_qvals = th.sum(target_max_local_qvals, dim=-1, keepdims=True)
 
-                nbrhood = indices[reward_index]
-                local_rewards = rewards[:, :, nbrhood]
-                local_rewards = th.sum(local_rewards, dim=-1).reshape(local_rewards.shape[0], local_rewards.shape[1], 1)
-                local_terminated = terminated.expand_as(local_rewards)
+            # Calculate 1-step Q-Learning targets
+            targets = local_rewards + self.args.gamma * (1 - local_terminated) * target_max_local_qvals
 
-                chosen_action_local_qvals = chosen_action_qvals[:, :, nbrhood]
-                target_max_local_qvals = target_max_qvals[:, :, nbrhood]
-                chosen_action_local_qvals = th.sum(chosen_action_local_qvals, dim=-1, keepdims=True)
-                target_max_local_qvals = th.sum(target_max_local_qvals, dim=-1, keepdims=True)
+            # Td-error
+            td_error = (chosen_action_local_qvals - targets.detach())
 
-                # print("Agent: ", agent_index, ", L depth: ", nbrhood, ",  Neighbors: ", nbrhood)
-                # print("Rewards Shape: ", rewards.shape, local_rewards.shape)
-                # print("Terminated Shape: ", terminated.shape, local_terminated.shape)
-                # print("Chosen Action Q Shape: ", chosen_action_qvals.shape, chosen_action_local_qvals.shape)
-                # print("Target Max Q Shape: ", target_max_qvals.shape, target_max_local_qvals.shape)
+            # 0-out the targets that came from padded data
+            mask = mask.expand_as(td_error)
+            masked_td_error = td_error * mask
 
-                # Calculate 1-step Q-Learning targets
-                targets = local_rewards + self.args.gamma * (1 - local_terminated) * target_max_local_qvals
-
-                # Td-error
-                td_error = (chosen_action_local_qvals - targets.detach())
-
-                # 0-out the targets that came from padded data
-                mask = mask.expand_as(td_error)
-                masked_td_error = td_error * mask
-
-                # Normal L2 loss, take mean over actual data
-                total_loss += (masked_td_error ** 2).sum() / mask.sum()
+            # Normal L2 loss, take mean over actual data
+            total_loss += (masked_td_error ** 2).sum() / mask.sum()
         return total_loss
 
     def update_l_params(self, t_env):

@@ -21,11 +21,14 @@ class LocalQMixer(nn.Module):
 
         # Now optimally we will need a graph dependency between the nodes
         # For now, lets assume that all agents are in a line like in the multi_cart_pole setting
-        self.depth_k = int(self.args.depth_k)
+        self.value_depth_k = int(self.args.value_depth_k)
         self.graph_obj = args.graph_obj
 
         # create list of nbrhds in advance for every agent
-        self.nbrhds = [self.graph_obj.get_nbrhood(agent_index, self.depth_k) for agent_index in range(self.n_agents)]
+        self.nbrhds = [
+            self.graph_obj.get_nbrhood(agent_index, self.value_depth_k)
+            for agent_index in range(self.n_agents)
+        ]
 
         # Each submixer needs to know the relevant agents that it is getting as input
         # TODO: Consider GNN, Convolution, Not just redirecting outputs
