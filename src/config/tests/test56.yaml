@@ -34,7 +34,7 @@ override:
         use_grid: True
 
         # num of agents in every direction
-        num_x_agents: 4
+        num_x_agents: 10
         num_y_agents: 1
 
         # distances between the gridded agent's bounds
