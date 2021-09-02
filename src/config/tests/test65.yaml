@@ -13,11 +13,11 @@ override:
   monotonicity_method: [ "weights", "weights", "weights", "weights" ,"weights", "weights" ]
 
   # Constant changes
-  monotonicity_loss_coeff: 0.5
   mac: "basic_mac"
   parameter_sharing: True
   depth_k: 1
   t_max: 4000000
+
   env_args:
     num_cartpoles: 20
 
