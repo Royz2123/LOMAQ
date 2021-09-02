@@ -27,6 +27,7 @@ def main():
     params = deepcopy(sys.argv)
     test_num = get_param(params, "--test-num")
     run_num = get_param(params, "--run-num")
+    human_mode = get_param(params, "--human-mode")
 
     test_num = convert_to_int(test_num)
     run_num = convert_to_int(run_num)
@@ -40,6 +41,10 @@ def main():
     override_config = get_current_run_override_config(test_config["override"], run_num, test_config["num_runs"])
     env_name = get_current_run_override_config(test_config["env_name"], run_num, test_config["num_runs"])
     alg_name = get_current_run_override_config(test_config["alg_name"], run_num, test_config["num_runs"])
+
+    # Override human mode if in arg params (the highest override). Could do this for the rest of the params too...
+    if human_mode is not None:
+        override_config["human_mode"] = bool(human_mode)
 
     single_run(env_name, alg_name, override_config, test_num=test_num, run_num=run_num)
 

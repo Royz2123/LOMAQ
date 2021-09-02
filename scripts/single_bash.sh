@@ -10,4 +10,4 @@ fi
 
 echo "Running test for test num $1, with run index $2"
 
-python3 src/single_main.py --test-num=$1 --run-num=$2
+python3 src/single_main.py --test-num=$1 --run-num=$2 --human-mode=True
