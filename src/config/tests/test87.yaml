@@ -11,7 +11,7 @@ override:
 
   # Dynamic changes
   monotonicity_method: "weights"
-  monotonicity_network: ["abs", "relu"]
+  monotonicity_network: ["relu", "leaky_relu"]
 
   # Constant changes
   submixer_parameter_sharing: True

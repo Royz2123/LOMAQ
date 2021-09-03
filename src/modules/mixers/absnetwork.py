@@ -45,10 +45,12 @@ class AbsNetwork(nn.Module):
             layer_input_size, layer_output_size = self.get_layer_dim(layer_idx)
 
             w = self.weights[layer_idx]
-            if self.abs_method == "abs":
+            if self.abs_method == "relu":
                 w = F.relu(w)
-            elif self.abs_method == "relu":
+            elif self.abs_method == "abs":
                 w = th.abs(w)
+            elif self.abs_method == "leaky_relu":
+                w = F.leaky_relu(w)
             else:
                 raise Exception("Unrecognized abs method: %s" % self.abs_method)
             w = w.view(-1, layer_input_size, layer_output_size)
