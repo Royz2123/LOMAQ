@@ -115,7 +115,7 @@ class SubMixer(nn.Module):
         self.state_dim = int(np.prod(args.state_shape))
 
         self.use_hyper_network = getattr(args, "monotonicity_network", "hyper") == "hyper"
-        self.use_abs_network = getattr(args, "monotonicity_network", "hyper") == "abs"
+        self.use_abs_network = getattr(args, "monotonicity_network", "hyper") in ["abs", "relu"]
         self.positive_weights = getattr(args, "monotonicity_method", "weights") == "weights"
 
         # This part is critical for the submixers, could be the source of problems!

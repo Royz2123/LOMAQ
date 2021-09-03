@@ -31,6 +31,11 @@ class MonotonicSubMixer(nn.Module):
         self.output_size = 1
         self.hyper_layers = args.submixer_hypernet_layers
 
+        # TODO: check this shit
+        # self.use_hyper_network = getattr(args, "monotonicity_network", "hyper") == "hyper"
+        # self.use_abs_network = getattr(args, "monotonicity_network", "hyper") in ["abs", "relu"]
+        # self.positive_weights = getattr(args, "monotonicity_method", "weights") == "weights"
+
         self.network = HyperNetwork(
             args,
             self.hyper_input_size,

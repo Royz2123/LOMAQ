@@ -15,6 +15,8 @@ class AbsNetwork(nn.Module):
         self.output_size = output_size
         self.total_layers = total_layers
 
+        self.abs_method = getattr(args, "monotonicity_network", "hyper")
+
         self.weights = nn.ParameterList()
         self.biases = nn.ParameterList()
 
@@ -41,7 +43,15 @@ class AbsNetwork(nn.Module):
 
         for layer_idx in range(self.total_layers):
             layer_input_size, layer_output_size = self.get_layer_dim(layer_idx)
-            w = F.relu(self.weights[layer_idx]).view(-1, layer_input_size, layer_output_size)
+
+            w = self.weights[layer_idx]
+            if self.abs_method == "abs":
+                w = F.relu(w)
+            elif self.abs_method == "relu":
+                w = th.abs(w)
+            else:
+                raise Exception("Unrecognized abs method: %s" % self.abs_method)
+            w = w.view(-1, layer_input_size, layer_output_size)
             b = self.biases[layer_idx].view(-1, 1, layer_output_size)
 
             # repeat both biases and weights to fit size
