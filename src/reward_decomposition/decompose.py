@@ -14,7 +14,9 @@ import time
 
 # wierd bug where matplotlib spits out a ton of debug messages for no apparent reason
 import logging
+
 logging.getLogger('matplotlib').setLevel(logging.ERROR)
+
 
 # Shape Conventions:
 
@@ -32,7 +34,7 @@ logging.getLogger('matplotlib').setLevel(logging.ERROR)
 
 def train_decomposer(decomposer, batch, reward_optimizer):
     # organize the data
-    reward_inputs, global_rewards, mask, _ = build_reward_data(batch)
+    reward_inputs, global_rewards, mask, _ = build_reward_data(decomposer, batch)
     raw_outputs = decomposer.forward(reward_inputs)
 
     reward_pred = decomposer.convert_raw_outputs(raw_outputs, output_type=PRED)
@@ -72,7 +74,7 @@ def train_decomposer(decomposer, batch, reward_optimizer):
 # reward_mask - if status is True, which rewards should be used
 def decompose(decomposer, batch):
     # decompose the reward
-    reward_inputs, global_rewards, mask, _ = build_reward_data(batch, include_last=False)
+    reward_inputs, global_rewards, mask, _ = build_reward_data(decomposer, batch, include_last=False)
     raw_outputs = decomposer.forward(reward_inputs)
 
     agent_rewards = decomposer.convert_raw_outputs(raw_outputs, output_type=AGENT_REWARDS)
@@ -107,19 +109,23 @@ def build_reward_mask(decomposer, local_rewards, global_rewards, mask):
     return status, reward_mask
 
 
-def build_reward_data(batch, include_last=True):
+def build_reward_data(decomposer, batch, include_last=True):
     # For now, define the input for the reward decomposition network as just the observations
     # note that some of these aren't relevant, so we additionally supply a mask for pairs that shouldn't be learnt
-    if include_last:
-        inputs = batch["obs"][:, :, :, :]
-        outputs = local_to_global(batch["reward"])
-        truth = batch["reward"]
-        mask = batch["filled"].float()
-    else:
-        inputs = batch["obs"][:, :-1, :, :]
-        outputs = local_to_global(batch["reward"][:, :-1])
-        truth = batch["reward"][:, :-1]
-        mask = batch["filled"][:, :-1].float()
+    inputs = batch["obs"][:, :, :, :]
+    outputs = local_to_global(batch["reward"])
+    truth = batch["reward"]
+    mask = batch["filled"].float()
+
+    obs_index = decomposer.args.reward_index_in_obs
+    if obs_index != -1:
+        inputs = inputs[:, :, :, obs_index: obs_index + 1]
+
+    if not include_last:
+        inputs = inputs[:, :-1]
+        outputs = outputs[:, :-1]
+        truth = truth[:, :-1]
+        mask = mask[:, :-1].float()
 
     return inputs, outputs, mask, truth
 
@@ -170,7 +176,7 @@ def visualize_decomposer_2d(decomposer, batch, env_name="multi_particle"):
         print("Can't visualize decomposer for this enviroment...")
         return
 
-    xs1, example_inputs1 = example_input_method(example_input)
+    xs1, example_inputs1 = example_input_method(decomposer, example_input)
     xs = itertools.product(*[xs1, xs1])
 
     # TODO: check if this is correct for larger ones
@@ -213,25 +219,32 @@ def draw_multiple_2d(arr_list):
 
 
 # Returns the theta coordinate
-def create_example_inputs_multi_cart(example_input):
+def create_example_inputs_multi_cart(decomposer, example_input):
     xs = np.arange(-np.pi / 4, np.pi / 4, 0.01)
     example_inputs = []
     for x_val in xs:
-        temp_input = th.tensor(example_input)
-        temp_input[2] = x_val
+        if decomposer.args.reward_index_in_obs == -1:
+            temp_input = th.tensor(example_input)
+            temp_input[2] = x_val
+        else:
+            temp_input = th.tensor(example_input[:1])
+            temp_input[0] = x_val
+
         example_inputs.append(temp_input)
     return xs, th.stack(example_inputs)
 
 
 # Returns the theta coordinate
-def create_example_inputs_multi_particle(example_input):
+def create_example_inputs_multi_particle(decomposer, example_input):
     xs = np.arange(0, 3, 0.1)
     example_inputs = []
     for x_val in xs:
         temp_input = th.tensor(example_input)
         temp_input[-1] = x_val
-        # temp_input[-2] = x_val / np.sqrt(2)
-        # temp_input[-3] = x_val / np.sqrt(2)
+
+        if decomposer.args.reward_index_in_obs == -1:
+            temp_input[-2] = x_val / np.sqrt(2)
+            temp_input[-3] = x_val / np.sqrt(2)
         example_inputs.append(temp_input)
     return xs, example_inputs
 
@@ -247,12 +260,10 @@ def visualize_decomposer_1d(decomposer, batch, env_name="multi_particle"):
         print("Can't visualize decomposer for this enviroment...")
         return
 
-    xs, example_inputs = example_input_method(example_input)
+    xs, example_inputs = example_input_method(decomposer, example_input)
 
-    # Reshape example_inputs so it looks like a batch
+    # Reshape example_inputs so it looks like a batch, duplicate along agent axis so forward knows how to eat this
     example_inputs = th.reshape(example_inputs, shape=(1, example_inputs.shape[0], 1, example_inputs.shape[1]))
-
-    # Duplicate along agent axis so forward knows how to eat this
     example_inputs = example_inputs.repeat(1, 1, decomposer.n_agents, 1)
 
     # Obtain local rewards for visualizations
@@ -262,7 +273,7 @@ def visualize_decomposer_1d(decomposer, batch, env_name="multi_particle"):
     ys = [agent_reward.detach().numpy() for agent_reward in agent_rewards[0, :, 0]]
 
     plt.close("all")
-    visualize_batch_1d(batch, env_name)
+    visualize_batch_1d(decomposer, batch, env_name)
     draw_1d_updating(xs, ys)
 
 
@@ -288,22 +299,26 @@ def create_multi_particle_viz_input(reward_inputs):
     return reward_inputs[:, :, :, -1]
 
 
-def visualize_batch_1d(batch, env_name="multi_particle"):
-    reward_inputs, global_rewards, mask, real_local_rewards = build_reward_data(batch, include_last=False)
+def visualize_batch_1d(decomposer, batch, env_name="multi_particle"):
+    reward_inputs, global_rewards, mask, real_local_rewards = build_reward_data(decomposer, batch, include_last=False)
 
     # Get the x coordinate for the visualization
-    if env_name == "multi_particle":
-        reward_inputs = create_multi_particle_viz_input(reward_inputs)
+    if decomposer.args.reward_index_in_obs != -1:
+        reward_inputs = reward_inputs[:, :, :, 0]
+    else:
+        if env_name == "multi_particle":
+            reward_inputs = create_multi_particle_viz_input(reward_inputs)
+        elif env_name == "multi_cart":
+            reward_inputs = create_multi_cart_viz_input(reward_inputs)
+        else:
+            print("Can't visualize batch for this enviroment...")
+            return
 
+    if env_name == "multi_particle":
         plt.axvline(x=0.3)
     elif env_name == "multi_cart":
-        reward_inputs = create_multi_cart_viz_input(reward_inputs)
-
         plt.axvline(x=-constants.THETA_THRESHOLD_RADIANS)
         plt.axvline(x=constants.THETA_THRESHOLD_RADIANS)
-    else:
-        print("Can't visualize batch for this enviroment...")
-        return
 
     global_rewards = global_rewards.expand_as(reward_inputs)
     mask = mask.expand_as(reward_inputs)

@@ -65,7 +65,8 @@ class RewardDecomposer:
         # if self.args.obs_agent_id:
         #     input_shape += self.n_agents
 
-        # input_shape = 1
+        if self.args.reward_index_in_obs != -1:
+            input_shape = 1
 
         return input_shape
 

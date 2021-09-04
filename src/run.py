@@ -150,7 +150,7 @@ def run_sequential(args, logger):
     # args.reward_optimiser = RMSprop(params=args.reward_decomposer.parameters(), lr=0.005, alpha=args.optim_alpha,
     #                                 eps=args.optim_eps) if args.decompose_reward else None
     args.reward_optimiser = Adam(params=args.reward_decomposer.parameters(),
-                                 lr=0.001) if args.decompose_reward else None
+                                 lr=0.01) if args.decompose_reward else None
 
     # Give runner the scheme
     runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)

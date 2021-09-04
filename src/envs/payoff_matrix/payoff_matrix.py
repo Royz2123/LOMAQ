@@ -48,6 +48,15 @@ class MatrixEnv(MultiAgentEnv):
                 [0, 2],
                 [2, 2],
             ])
+        elif reward_setup == 3:
+            self.r_1 = np.array([
+                [0, 1],
+                [0, 1],
+            ])
+            self.r_2 = np.array([
+                [1, 0],
+                [1, 0],
+            ])
 
         self.payoff_matrix = self.r_1 + self.r_2
 

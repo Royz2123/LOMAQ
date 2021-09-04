@@ -11,25 +11,30 @@ override:
 
   # Dynamic changes
   env_args:
-    num_cartpoles: 2
+    num_cartpoles: 1
 
   # Constant changes
   # Reward decomposition variables
   decompose_reward: True
   reward_parameter_sharing: True
-  reward_batch_size: 50
+  reward_batch_size: 100
   reward_updates_per_batch: 50
+
   reward_diff_threshold: 0.05
-  assume_binary_reward: True
-  reward_acc: 0.95
+  reward_acc: 1.0
+
+  assume_binary_reward: False
+
   regularizing_weight: 0.00005
   reward_beta2: 1
   reward_l: 1
 
+  reward_index_in_obs: -1
+
   monotonicity_method: "weights"
   parameter_sharing: True
   depth_k: 1
-  t_max: 4000000
+  t_max: 1000000
 
 
 

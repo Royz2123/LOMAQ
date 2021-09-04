@@ -126,7 +126,7 @@ class SingleCart(object):
         else:
             x = self.np_random.uniform(low=-self.params["coupled"]["range"], high=self.params["coupled"]["range"], size=(1,))
             x[0] += self.offset
-        other_data = self.np_random.uniform(low=-0.05, high=0.05, size=(3,))
+        other_data = self.np_random.uniform(low=-0.01, high=0.01, size=(3,))
 
         # concatenate
         self.state = np.concatenate((x, other_data))

@@ -1,0 +1,31 @@
+# Test 65 tests scalability for the multi_particle enviroment
+
+num_runs: 4
+env_name: multi_cart
+alg_name: [ local_qmix,iql_local,local_qmix,iql_local ]
+
+override:
+  # Things that tend to get change in the local machine, just override
+  test_nepisode: 10
+  human_mode: False
+
+  # Dynamic changes
+  monotonicity_method: "weights"
+  monotonicity_network: "relu"
+
+  # Constant changes
+  submixer_parameter_sharing: True
+  submixer_non_share_depth: 1
+  value_depth_k: 1
+
+  mac: "basic_mac"
+  epsilon_anneal_time: 100000
+  t_max: 4000000
+
+  env_args:
+    num_cartpoles: 2
+    obs_radius: [1, 1, 0, 0]
+    coupled:
+      spring_k: [30.0, 30.0, 30.0, 30.0]
+
+
