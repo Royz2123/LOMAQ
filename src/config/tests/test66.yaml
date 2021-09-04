@@ -23,7 +23,7 @@ override:
   t_max: 4000000
 
   env_args:
-    num_cartpoles: 2
+    num_cartpoles: 10
     obs_radius: [1, 1, 0, 0]
     coupled:
       spring_k: [30.0, 30.0, 30.0, 30.0]
