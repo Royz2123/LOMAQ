@@ -167,9 +167,7 @@ def compute_diff(local_rewards, global_rewards, mask, use_mask=True):
     summed_local_rewards = local_to_global(local_rewards)
     global_rewards = th.reshape(global_rewards, summed_local_rewards.shape)
 
-    print(th.__path__)
-    exit()
-    diff = th.subtract(summed_local_rewards, global_rewards)
+    diff = summed_local_rewards - global_rewards
     if use_mask:
         diff = th.mul(diff, mask)
     return diff
