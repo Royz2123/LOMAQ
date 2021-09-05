@@ -330,7 +330,7 @@ class RewardGroup(nn.Module):
         return classes.apply_(lambda x: self.output_vals[x])
 
     def local_rewards_to_agent_rewards(self, local_rewards):
-        agent_rewards = th.zeros(*local_rewards.shape[:2], self.args.n_agents)
+        agent_rewards = th.zeros(*local_rewards.shape[:2], self.args.n_agents).to(self.args.device)
         local_rewards = th.reshape(local_rewards, shape=(*local_rewards.shape[:2], -1))
 
         for idx, indices_group in enumerate(self.indices_groups):
