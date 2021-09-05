@@ -27,6 +27,6 @@ override:
     obs_radius: [1, 1, 0, 0]
     episode_limit: 200
     coupled:
-      spring_k: [30.0, 30.0, 30.0, 30.0]
+      spring_k: [10.0, 10.0, 10.0, 10.0]
 
 
