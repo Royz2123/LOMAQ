@@ -9,6 +9,8 @@ override:
   # Things that tend to get change in the local machine, just override
   test_nepisode: 20
   human_mode: False
+  test_interval: 5000
+  log_interval: 5000
 
   # Dynamic changes
   decompose_reward: [False, True, False, False, False, False, False]
