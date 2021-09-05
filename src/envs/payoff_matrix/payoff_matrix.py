@@ -11,7 +11,6 @@ class MatrixEnv(MultiAgentEnv):
             a=2.0,
             episode_limit=2,
             reward_setup=0,
-            seed=None,
             exp_logger=None,
             learner_name="default_learner",
     ):

@@ -1,7 +1,6 @@
 import math
 import gym
 from gym import spaces, logger
-from gym.utils import seeding
 import numpy as np
 from gym.envs.classic_control import rendering
 
@@ -52,8 +51,6 @@ class SingleCart(object):
     """
 
     def __init__(self, params, offset=0):
-        self.seed()
-
         self.viewer = None
         self.state = None
         self.steps_beyond_done = None
@@ -65,10 +62,6 @@ class SingleCart(object):
         self._cart_geom = None
         self._pole_geom = None
         self._cart_color = random.random() / 2.0
-
-    def seed(self, seed=None):
-        self.np_random, seed = seeding.np_random(seed)
-        return [seed]
 
     def step(self, action, left_pos=None, right_pos=None):
         x, x_dot, theta, theta_dot = self.state
@@ -177,7 +170,6 @@ class SingleCart(object):
             cart = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])
 
             # set cart color
-            random.seed(self.offset)
             cart.set_color(self._cart_color, self._cart_color, self._cart_color)
 
             self.carttrans = rendering.Transform()

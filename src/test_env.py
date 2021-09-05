@@ -19,7 +19,7 @@ if __name__ == '__main__':
     decay = 1
     runs = 1
 
-    env = TrafficEnv(seed=None, use_gui=True)
+    env = TrafficEnv(use_gui=True)
 
     for run in range(1, runs + 1):
         initial_states = env.reset()

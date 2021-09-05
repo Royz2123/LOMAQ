@@ -1,7 +1,6 @@
 env: traffic
 
 env_args:
-  seed: null
 
 test_greedy: True
 test_nepisode: 5

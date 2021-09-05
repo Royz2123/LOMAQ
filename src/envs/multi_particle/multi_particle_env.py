@@ -33,7 +33,6 @@ class MultiParticleEnv(MultiAgentEnv):
             rules=None,
             episode_limit=500,
             animation_speed=0,
-            seed=None,
             exp_logger=None,
             learner_name="default_learner",
     ):

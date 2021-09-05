@@ -8,7 +8,6 @@ import math
 import gym
 import time
 from gym import spaces, logger
-from gym.utils import seeding
 import numpy as np
 from gym.envs.classic_control import rendering
 
@@ -37,7 +36,6 @@ class MultiCartPoleEnv(MultiAgentEnv):
             coupled=None,
             rules=None,
             test_physics=False,
-            seed=None,
             exp_logger=None,
             episode_limit=500,
             animation_speed=0,
@@ -48,7 +46,6 @@ class MultiCartPoleEnv(MultiAgentEnv):
             "cartdist": cartdist if test_physics else cartdist,
             "num_cartpoles": num_cartpoles,
             "obs_radius": obs_radius,
-            "seed": seed,
             "test_physics": test_physics,
             "bottom_threshold": -cartdist,
             "top_threshold": cartdist * num_cartpoles,

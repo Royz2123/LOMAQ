@@ -13,7 +13,6 @@ BASE_PATH = "./src/envs/traffic/nets/"
 class TrafficEnv(SumoEnvironment, MultiAgentEnv):
     def __init__(
             self,
-            seed=None,
             use_gui=False,
             exp_logger=None,
             learner_name="default_learner"

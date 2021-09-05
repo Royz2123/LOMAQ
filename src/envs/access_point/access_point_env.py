@@ -8,7 +8,6 @@ import math
 import gym
 import time
 from gym import spaces, logger
-from gym.utils import seeding
 import numpy as np
 from gym.envs.classic_control import rendering
 
@@ -26,7 +25,7 @@ import envs.multi_cart.single_cart as single_cart
 
 
 class AccessPointEnv(MultiAgentEnv):
-    def __init__(self, grid_size, params, episode_limit, animation_speed, seed=None, learner_name="default_learner",
+    def __init__(self, grid_size, params, episode_limit, animation_speed, learner_name="default_learner",
                  exp_logger=None, ):
         # Save parameters
         self.params = {
