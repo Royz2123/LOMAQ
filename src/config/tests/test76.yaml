@@ -1,0 +1,51 @@
+# Test 76 tests the limits of reward decomposition for the multiparticle
+
+num_runs: 6
+env_name: multi_particle
+alg_name: local_qmix
+
+override:
+  # Things that tend to get change in the local machine, just override
+  test_nepisode: 1
+  human_mode: True
+
+  # Dynamic changes
+  env_args:
+    num_agents: 2
+    num_landmarks: 1
+    rules:
+      reward:
+        landmark_radius: 0.1
+      obs:
+        show_num_agents_on_landmark: True
+      grid:
+        use_grid: False
+
+  # Constant changes
+  # Reward decomposition variables
+  decompose_reward: True
+  reward_parameter_sharing: True
+  reward_batch_size: 10
+  reward_updates_per_batch: 20
+
+  viz_reward_decomposition: True
+  reward_viz_interval: 1000
+
+  reward_diff_threshold: 0.05
+  reward_acc: 0.95
+
+  assume_binary_reward: False
+
+  regularizing_weight: 0.0001
+  reward_beta2: 1
+  reward_l: 2
+
+  reward_index_in_obs: 6
+
+  monotonicity_method: "weights"
+  parameter_sharing: True
+  depth_k: 1
+  t_max: 1000000
+
+
+

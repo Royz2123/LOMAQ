@@ -337,10 +337,10 @@ class LocalSpreadScenario(BaseScenario):
                     rest_pos = sorted(rest_pos, key=lambda x: np.linalg.norm(x))
                     rest_pos = rest_pos[:num_padding_landmarks]
 
-                    # lndmrks_dist = np.array([np.sqrt(np.sum(np.square(pos))) for pos in lndmrks_pos])
-
-                    # trying to add the relative distnace of the landmark
                     obs_list = reachable_pos + rest_pos
+
+                    # trying to add the relative distance of the landmark
+                    obs_list += [np.array([np.sqrt(np.sum(np.square(pos))) for pos in obs_list])]
 
             elif obs_type == "all":
                 obs_list = LocalSpreadScenario.get_all_relative_positions(all_entities, curr_agent)

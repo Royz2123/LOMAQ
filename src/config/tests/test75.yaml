@@ -17,8 +17,8 @@ override:
   # Reward decomposition variables
   decompose_reward: True
   reward_parameter_sharing: True
-  reward_batch_size: 100
-  reward_updates_per_batch: 50
+  reward_batch_size: 200
+  reward_updates_per_batch: 100
 
   reward_diff_threshold: 0.05
   reward_acc: 1.0

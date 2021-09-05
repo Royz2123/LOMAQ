@@ -10,6 +10,7 @@ from types import SimpleNamespace as SN
 
 from matplotlib import pyplot as plt
 
+from reward_decomposition import decompose_viz
 from utils.logging import Logger
 from utils.timehelper import time_left, time_str
 from os.path import dirname, abspath
@@ -199,6 +200,7 @@ def run_sequential(args, logger):
     last_test_T = -args.test_interval - 1
     last_log_T = 0
     model_save_time = 0
+    last_viz_reward_t = 0
 
     start_time = time.time()
     last_time = start_time
@@ -216,14 +218,18 @@ def run_sequential(args, logger):
                 reward_sample = buffer.sample(args.reward_batch_size)
                 decompose.train_decomposer(args.reward_decomposer, reward_sample, args.reward_optimiser)
 
-                # Last batch for this round, save reward decomposition model & display results
-                if reward_update_idx == args.reward_updates_per_batch - 1:
-                    # Visualize the reward models
-                    # decompose.visualize_decomposer_2d(args.reward_decomposer, reward_sample, env_name=args.env)
-                    decompose.visualize_decomposer_1d(args.reward_decomposer, reward_sample, env_name=args.env)
+        if (
+                getattr(args, "viz_reward_decomposition", False)
+                and (runner.t_env - last_viz_reward_t) >= getattr(args, "reward_viz_interval", 5000)
+                and buffer.can_sample(args.reward_batch_size)
+        ):
+            # Visualize the reward models
+            reward_sample = buffer.sample(args.reward_batch_size)
+            decompose_viz.visualize_decomposer(args.reward_decomposer, reward_sample, env_name=args.env)
+            last_viz_reward_t = runner.t_env
 
-                    # Save models to default directory
-                    args.reward_decomposer.save_models()
+            # Save models to default directory
+            args.reward_decomposer.save_models()
 
         # Next Train the learner
         if buffer.can_sample(args.batch_size):
