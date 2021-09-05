@@ -54,7 +54,7 @@ def main():
     for i in commands:
         print(f"Running:\t{i}")
         procs.append(Popen(i, shell=True))
-        time.sleep(10)
+        time.sleep(5)
 
     for p in procs:
         p.wait()
