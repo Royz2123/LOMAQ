@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import os
 import collections
@@ -39,7 +41,7 @@ def get_freer_gpu():
     return int(np.argmax(memory_available))
 
 
-def single_run(env_name, alg_name, override_config=None, test_num=None, run_num=None):
+def single_run(env_name, alg_name, seed, override_config=None, test_num=None, run_num=None):
     # Load algorithm and env base configs
     default_config = get_config_dict("default")
     env_config = get_config_dict(env_name, "envs")
@@ -63,10 +65,10 @@ def single_run(env_name, alg_name, override_config=None, test_num=None, run_num=
     config_dict["exp_logger"] = exp_logger
 
     # Setting the random seed throughout the modules
-    # config = config_copy(_config)
-    # np.random.seed(config["seed"])
-    # th.manual_seed(config["seed"])
-    # config['env_args']['seed'] = config["seed"]
+    np.random.seed(seed)
+    th.manual_seed(seed)
+    random.seed(seed)
+    config_dict["seed"] = seed
 
     config_dict = run.args_sanity_check(config_dict, logger)
 
@@ -110,7 +112,10 @@ def main():
     env_name = get_param(params, "--env-name")
     alg_name = get_param(params, "--alg-name")
 
-    single_run(env_name, alg_name)
+    # Seed is randomly generated for a single run like this
+    seed = random.randrange(sys.maxsize)
+
+    single_run(env_name, alg_name, seed)
 
 
 if __name__ == '__main__':

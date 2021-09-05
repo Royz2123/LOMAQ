@@ -40,12 +40,21 @@ def main():
         raise Exception("Invalid test_num, exiting...")
 
     # Parse the test config, and run single_run that many times
-    commands = [make_command(test_num, run_num, platform) for run_num in range(test_config["num_runs"])]
+    num_iterations = test_config.get("num_iterations", default=1)
+    test_names = [f"{test_num}-{iteration_num}" for iteration_num in range(num_iterations)]
+
+    # Create command for every testnum-iterationnum-runnum
+    commands = [
+        make_command(test_name, run_num, platform)
+        for run_num in range(test_config["num_runs"])
+        for test_name in test_names
+    ]
 
     procs = []
     for i in commands:
+        print(f"Running:\t{i}")
         procs.append(Popen(i, shell=True))
-        time.sleep(5)
+        time.sleep(10)
 
     for p in procs:
         p.wait()

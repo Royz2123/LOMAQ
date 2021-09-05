@@ -102,7 +102,9 @@ class LocalQMixer(nn.Module):
             # Redirect States to SubMixers
             qs.append(sub_mixer.forward(relevant_qs, states))
 
-        return th.squeeze(th.stack(qs, dim=2))
+        qs = th.stack(qs, dim=2)
+        qs = th.reshape(qs, shape=qs.shape[:3])
+        return qs
 
 
 class SubMixer(nn.Module):

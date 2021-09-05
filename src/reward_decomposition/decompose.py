@@ -35,6 +35,11 @@ logging.getLogger('matplotlib').setLevel(logging.ERROR)
 def train_decomposer(decomposer, batch, reward_optimizer):
     # organize the data
     reward_inputs, global_rewards, mask, _ = build_reward_data(decomposer, batch)
+    # th.set_printoptions(profile="full") # reset
+    #
+    # print(reward_inputs)
+    # print(global_rewards)
+
     raw_outputs = decomposer.forward(reward_inputs)
 
     reward_pred = decomposer.convert_raw_outputs(raw_outputs, output_type=PRED)
@@ -96,7 +101,8 @@ def build_reward_mask(decomposer, local_rewards, global_rewards, mask):
     diff = compute_diff(local_rewards, global_rewards, mask)
 
     # Determine the reward mask and the status
-    reward_mask = th.where(th.logical_and(mask, (th.abs(diff) < decomposer.args.reward_diff_threshold)), 1., 0.)
+    delta = decomposer.args.reward_diff_threshold * decomposer.n_agents
+    reward_mask = th.where(th.logical_and(mask, (th.abs(diff) < delta)), 1., 0.)
     reward_decomposition_acc = th.sum(reward_mask) / th.sum(mask)
     status = reward_decomposition_acc > decomposer.args.reward_acc
 
@@ -155,15 +161,21 @@ def compute_loss(local_rewards, global_rewards, mask):
     return loss
 
 
-def compute_diff(local_rewards, global_rewards, mask):
+def compute_diff(local_rewards, global_rewards, mask, use_mask=True):
     # reshape local rewards
     local_rewards = th.reshape(local_rewards, shape=(*local_rewards.shape[:2], -1))
     summed_local_rewards = local_to_global(local_rewards)
     global_rewards = th.reshape(global_rewards, summed_local_rewards.shape)
-    return th.mul(th.subtract(summed_local_rewards, global_rewards), mask)
+
+    diff = th.subtract(summed_local_rewards, global_rewards)
+    if use_mask:
+        diff = th.mul(diff, mask)
+    return diff
+
 
 def almost_flatten(arr):
     return arr.reshape(-1, arr.shape[-1])
+
 
 def local_to_global(arr):
     return th.sum(arr, dim=-1, keepdims=True)

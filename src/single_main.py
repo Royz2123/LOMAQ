@@ -1,3 +1,5 @@
+import random
+
 import yaml
 import time
 import sys
@@ -21,15 +23,24 @@ def convert_to_int(s):
     except ValueError:
         raise Exception("Please specify a valid test/run num")
 
+# We allow for test num to also include an iteration num, for running tests with multiple seeds
+def parse_test_num(s):
+    iteration_num = 0
+    if "_" in s:
+        test_num, iteration_num = s.split("_")
+        test_num, iteration_num = convert_to_int(test_num), convert_to_int(iteration_num)
+    else:
+        test_num = convert_to_int(s)
+    return iteration_num, test_num
 
 def main():
     # First try to see what test we're dealing with
     params = deepcopy(sys.argv)
-    test_num = get_param(params, "--test-num")
+    test_name = get_param(params, "--test-num")
     run_num = get_param(params, "--run-num")
     human_mode = get_param(params, "--human-mode")
 
-    test_num = convert_to_int(test_num)
+    iteration_num, test_num = parse_test_num(test_name)
     run_num = convert_to_int(run_num)
 
     # Now try to read the test and see if it's valid
@@ -46,7 +57,11 @@ def main():
     if human_mode is not None:
         override_config["human_mode"] = bool(human_mode)
 
-    single_run(env_name, alg_name, override_config, test_num=test_num, run_num=run_num)
+    # Seed that is used in this case is the test_num + iteration_num
+    seed = test_num + iteration_num
+
+    # Run the single run
+    single_run(env_name, alg_name, seed, override_config, test_num=test_name, run_num=run_num)
 
 
 # This is a module who's goal is to run multiple test in one run

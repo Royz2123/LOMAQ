@@ -1,16 +1,17 @@
 # FINAL TEST! Tests scalability of multi_cart
 
+num_iterations: 3
 num_runs: 7
 env_name: multi_cart
 alg_name: [ local_qmix,local_qmix,qmix,iql_local,iql,vdn,qtran ]
 
 override:
   # Things that tend to get change in the local machine, just override
-  test_nepisode: 10
+  test_nepisode: 20
   human_mode: False
 
   # Dynamic changes
-  decompose_reward: [True, False, False, False, False, False, False]
+  decompose_reward: [False, True, False, False, False, False, False]
 
   # Constant changes
   # Monotonicity
@@ -29,12 +30,12 @@ override:
 
   # Reward decomposition
   reward_parameter_sharing: True
-  reward_batch_size: 10
-  reward_updates_per_batch: 20
+  reward_batch_size: 5
+  reward_updates_per_batch: 1
   viz_reward_decomposition: False
-  reward_viz_interval: 1000
-  reward_diff_threshold: 0.05
-  reward_acc: 0.95
+  reward_viz_interval: 30
+  reward_diff_threshold: 0.1
+  reward_acc: 0.90
   assume_binary_reward: False
   regularizing_weight: 0
   reward_beta2: 1

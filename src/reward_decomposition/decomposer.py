@@ -258,7 +258,12 @@ class RewardGroup(nn.Module):
             # of size k, the output shape will be 2*k + 1, except for the first one.
             # For the sake of convenience, we allow single agent reward functions to be -1 as well
             if self.num_reward_agents == 1:
-                output_vals = [0, 1]
+                if self.args.env == "multi_particle":
+                    output_vals = [0, 0.5, 1]
+                elif self.args.env == "multi_cart":
+                    output_vals = [0, 1]
+                else:
+                    raise Exception("Unsupported env name")
             else:
                 output_vals = list(range(-self.num_reward_agents, self.num_reward_agents + 1))
                 # output_vals = [-1, -0.5, 0, 0.5, 1]
