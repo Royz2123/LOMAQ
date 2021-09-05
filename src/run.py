@@ -215,7 +215,7 @@ def run_sequential(args, logger):
         # First train the reward decomposer if necessary
         if args.decompose_reward and buffer.can_sample(args.reward_batch_size):
             for reward_update_idx in range(args.reward_updates_per_batch):
-                reward_sample = buffer.sample(args.reward_batch_size)
+                reward_sample = buffer.sample(args.reward_batch_size).to(args.device)
                 decompose.train_decomposer(args.reward_decomposer, reward_sample, args.reward_optimiser)
 
         if (

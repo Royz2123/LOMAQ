@@ -45,6 +45,7 @@ override:
   reward_index_in_obs: -1
 
   env_args:
+    episode_limit: 200
     num_cartpoles: 15
 
 
