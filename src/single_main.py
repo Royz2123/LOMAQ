@@ -23,15 +23,17 @@ def convert_to_int(s):
     except ValueError:
         raise Exception("Please specify a valid test/run num")
 
+
 # We allow for test num to also include an iteration num, for running tests with multiple seeds
 def parse_test_num(s):
     iteration_num = 0
-    if "_" in s:
-        test_num, iteration_num = s.split("_")
+    if "-" in s:
+        test_num, iteration_num = s.split("-")
         test_num, iteration_num = convert_to_int(test_num), convert_to_int(iteration_num)
     else:
         test_num = convert_to_int(s)
     return iteration_num, test_num
+
 
 def main():
     # First try to see what test we're dealing with
