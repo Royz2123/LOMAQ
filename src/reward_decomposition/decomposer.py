@@ -245,7 +245,7 @@ class RewardGroup(nn.Module):
         self.input_shape = self.input_shape_one_obs * num_reward_agents
         self.output_shape, self.output_vals = self.compute_output_scheme()
 
-        self.reward_network = self.build_reward_network()
+        self.reward_network = self.build_reward_network().to(self.args.device)
 
     # If the reward network is a classifier, then outputs like classes otherwise 1
     def compute_output_scheme(self):
