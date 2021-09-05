@@ -117,9 +117,9 @@ class SingleCart(object):
         if save_x and self.state is not None:
             x = np.array([self.state[0]])
         else:
-            x = self.np_random.uniform(low=-self.params["coupled"]["range"], high=self.params["coupled"]["range"], size=(1,))
+            x = np.random.uniform(low=-self.params["coupled"]["range"], high=self.params["coupled"]["range"], size=(1,))
             x[0] += self.offset
-        other_data = self.np_random.uniform(low=-0.02, high=0.02, size=(3,))
+        other_data = np.random.uniform(low=-0.02, high=0.02, size=(3,))
 
         # concatenate
         self.state = np.concatenate((x, other_data))

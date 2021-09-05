@@ -158,7 +158,7 @@ class SubMixer(nn.Module):
                     self.input_size,
                     self.hidden_size,
                     self.output_size,
-                    2
+                    3
                 )
             else:
                 raise Exception("Unrecognized monotonicity_network")
