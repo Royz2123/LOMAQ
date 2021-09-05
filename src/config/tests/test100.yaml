@@ -1,6 +1,6 @@
 # FINAL TEST! Tests scalability of multi_cart
 
-num_iterations: 3
+num_iterations: 1
 num_runs: 7
 env_name: multi_cart
 alg_name: [ local_qmix,local_qmix,qmix,iql_local,iql,vdn,qtran ]
