@@ -3,11 +3,23 @@
 export DISPLAY=localhost:0.0
 LANG=en_US
 
-if [ "$#" -ne 2 ]; then
-  echo "Usage: sh scripts/single_technion.sh [test-num] [run-num]";
+test_num=0;
+iteration_num=0;
+run_num=0;
+if [ "$#" -eq 2 ]; then
+  test_num=$1;
+  run_num=$2;
+fi
+if [ "$#" -eq 3 ]; then
+  test_num=$1;
+  iteration_num=$2;
+  run_num=$3;
+fi
+if [ "$#" -gt 3 -o "$#" -lt 2]; then
+  echo "Usage: sh scripts/single_bash.sh [test-num] [optional: iteration_num (default=0)] [run-num]";
   exit 1;
 fi
 
-echo "Running test for test num $1, with run index $2"
+echo "Running test for test num $test_num, with run index $run_num, with iteration num $iteration_num"
 
-xvfb-run -a -e /dev/stdout python3 src/single_main.py --test-num=$1 --run-num=$2
+xvfb-run -a -e /dev/stdout python3 src/single_main.py --test-num=$test_num --iteration-num=$iteration_num --run-num=$run_num

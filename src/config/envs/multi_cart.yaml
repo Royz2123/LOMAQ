@@ -1,7 +1,7 @@
 env: multi_cart
 
 env_args:
-  cartdist: 4
+  cartdist: 1
   num_cartpoles: 3
   obs_radius: 0
   test_physics: False
@@ -10,7 +10,7 @@ env_args:
   coupled:
     mode: True
     spring_k: 10.0
-    range: 2.0
+    range: 0.1
   rules:
     terminate: "all"   # string, can be any, all, or endless
     edge_springs: True

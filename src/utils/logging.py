@@ -66,6 +66,9 @@ class Logger:
             wandb.log({key: wandb.Video(value, format="gif")})
             return
 
+        if image or images or video:
+            return
+
         self.stats[key].append((t, value))
 
         if self.use_tb:
@@ -90,7 +93,7 @@ class Logger:
                 continue
             i += 1
             window = 5 if k != "epsilon" else 1
-            item = "{:.4f}".format(np.mean([x[1] for x in self.stats[k][-window:]]))
+            item = "{:.4f}".format(np.mean([float(x[1]) for x in self.stats[k][-window:]]))
             log_str += "{:<25}{:>8}".format(k + ":", item)
             log_str += "\n" if i % 4 == 0 else "\t"
         self.console_logger.info(log_str)

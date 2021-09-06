@@ -15,14 +15,15 @@ TESTS_PATH = os.path.join(os.path.dirname(__file__), "config", "tests")
 SUPER_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config", "super_config.yaml")
 
 
-def make_command(test_num, run_num, platform):
-    return f"sh scripts/single_{platform}.sh {test_num} {run_num}"
+def make_command(test_num, iteration_num, run_num, platform):
+    return f"sh scripts/single_{platform}.sh {test_num} {iteration_num} {run_num}"
 
 
 def main():
     # First try to see what test we're dealing with
     params = deepcopy(sys.argv)
     test_num = get_param(params, "--test-num")
+    iteration_num = get_param(params, "--iteration-num")
     platform = get_param(params, "--platform")
 
     # If test num not specified, raise an error so we don't have any problems
@@ -39,16 +40,18 @@ def main():
     if test_config is None:
         raise Exception("Invalid test_num, exiting...")
 
-    # Parse the test config, and run single_run that many times
-    num_iterations = test_config.get("num_iterations", 1)
-    test_names = [f"{test_num}-{iteration_num}" for iteration_num in range(num_iterations)]
-
-    # Create command for every testnum-iterationnum-runnum
-    commands = [
-        make_command(test_name, run_num, platform)
-        for run_num in range(test_config["num_runs"])
-        for test_name in test_names
-    ]
+    # Create command for every testnum-iterationnum-runnum. If iteration num is not specified, run all of them
+    if iteration_num is None:
+        commands = [
+            make_command(test_num, curr_iteration_num, run_num, platform)
+            for run_num in range(test_config["num_runs"])
+            for curr_iteration_num in range(test_config.get("num_iterations", 1))
+        ]
+    else:
+        commands = [
+            make_command(test_num, iteration_num, run_num, platform)
+            for run_num in range(test_config["num_runs"])
+        ]
 
     procs = []
     for i in commands:

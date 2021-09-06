@@ -5,7 +5,7 @@ CARTPOLES = 3
 CARTDIST = 2
 
 X_MARGIN = 6
-THETA_THRESHOLD_RADIANS = 30 * 2 * math.pi / 360
+THETA_THRESHOLD_RADIANS = 12 * 2 * math.pi / 360
 
 HIGH = np.array([X_MARGIN * 2,
                  np.finfo(np.float32).max,
