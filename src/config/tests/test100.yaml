@@ -27,7 +27,7 @@ override:
   mac: "basic_mac"
 
   # Training
-  epsilon_anneal_time: 50000
+  epsilon_anneal_time: 100000
   t_max: 4000000
 
   # Reward decomposition
@@ -46,6 +46,6 @@ override:
 
   env_args:
     episode_limit: 200
-    num_cartpoles: 2
+    num_cartpoles: 15
 
 
