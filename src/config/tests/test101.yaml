@@ -1,6 +1,6 @@
 # FINAL TEST! Tests scalability of multi_particle
 
-num_iterations: 1
+num_iterations: 3
 num_runs: 7
 env_name: multi_particle
 alg_name: [ local_qmix,local_qmix,qmix,iql_local,iql,vdn,qtran ]
@@ -60,7 +60,7 @@ override:
         num_y_agents: 1
 
         # distances between the gridded agent's bounds
-        grid_dist_x: 0.75
+        grid_dist_x: 0.70
         grid_dist_y: 2.10
 
         # how much should the odd cols of agents be offsetted in the y direction
