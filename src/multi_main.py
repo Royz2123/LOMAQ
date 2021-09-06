@@ -53,6 +53,8 @@ def main():
             for run_num in range(test_config["num_runs"])
         ]
 
+    print(commands)
+
     procs = []
     for i in commands:
         print(f"Running:\t{i}")
