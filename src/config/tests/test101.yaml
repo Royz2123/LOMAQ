@@ -60,7 +60,7 @@ override:
         num_y_agents: 1
 
         # distances between the gridded agent's bounds
-        grid_dist_x: 0.70
+        grid_dist_x: 0.75
         grid_dist_y: 2.10
 
         # how much should the odd cols of agents be offsetted in the y direction
