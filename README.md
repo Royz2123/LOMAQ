@@ -124,5 +124,6 @@ LOMAQ
 │   │   offline_plot.py (for plotting results)
 │   │   ...
 │   README.md (you are here)
+│   requirements.txt (all the necessary packages for running the code)
 │   ...
 ```
