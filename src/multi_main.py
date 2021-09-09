@@ -30,10 +30,10 @@ def main():
     if test_num is None:
         raise Exception("Please specify a test_num")
 
-    # If platform is not specified, assume it's on the technion machine
+    # If platform is not specified, assume it's on the server machine
     if platform is None:
-        print("Platform is not specified, assuming default platform")
-        platform = "technion"
+        print("Platform is not specified, assuming running on a server")
+        platform = "server"
 
     # Now try to read the test and see if it's valid
     test_config = get_config_dict(f"test{test_num}", "tests")

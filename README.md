@@ -5,10 +5,10 @@ Our method leverages local agent rewards for improving credit assignment, whilst
 cooperative objective. In addition, we provide a direct decomposition method for finding local 
 rewards when only a global reward is provided.
 
-Our code extends the [pymarl repository](https://github.com/oxwhirl/pymarl), although the code
-has been significantly modified for our setting.
+![LOMAQ visualization](https://raw.githubusercontent.com/Royz2123/LOMAQ/main/documentation/general_vizualization_with_back.png)
 
-![LOMAQ architecture](https://raw.githubusercontent.com/Royz2123/LOMAQ/main/documentation/architecture3.png)
+Our code is built upon the [pymarl repository](https://github.com/oxwhirl/pymarl), although the code
+has been significantly modified for our setting.
 
 ## Installation
 
@@ -44,7 +44,14 @@ a specific test. For instance, if one wishes to run a certain algorithm against 
 
 We offer a variety of different ways for running the code for different purposes. All the mentioned 
 bash files can be found under `scripts/`. Note that running the code should always be done from the 
-main `LOMAQ/` directory, and **NOT** from `src/` or `scripts/`.
+main `LOMAQ/` directory, and **NOT** from `src/` or `scripts/`. 
+
+We also note that we provide 2 
+versions for every script: `<script-name>-local.sh` and `<script-name>-server.sh`. The server 
+version doesn't attempt to display a visualization of the environment, and instead uploads data to
+[WANDB](https://wandb.ai/site). 
+Note that all examples demonstrate the "local" version, but can be easily changed into the "server"
+option by substitution. 
 
 ### Simple Run
 
@@ -56,7 +63,7 @@ the relevant parameters. For instance:
 python3 src/main.py --env-name=lomaq --alg-name=multi_particle
 ```
 
-An alternative is running `scripts/run_bash.sh`. By default, the script will run `src/main.py` with LOMAQ and the 
+An alternative is running `scripts/run_local.sh`. By default, the script will run `src/main.py` with LOMAQ and the 
 multi_particle environment.
 
 ### Running a Test
@@ -66,14 +73,14 @@ read the relevant test file, and initiate the runs that it depicts. The runs are
 if one wishes to run test number `53`:
 
 ```shell
-python3 src/multi_main.py --test-num=53 --platform=bash
+python3 src/multi_main.py --test-num=53
 ```
 
 If one wishes to run the same test multiple times with different seeds, this can be done using another argument 
 `iteration_num` (default is 0). The corresponding seed will be `iteration_num + test_num`, and can be done using:
 
 ```shell
-python3 src/multi_main.py --test-num=53 --iteration-num=10 --platform=bash
+python3 src/multi_main.py --test-num=53 --iteration-num=10
 ```
 
 If one wishes to only run a single run from a test, this can be done using `src/single_main.py` by specifying the 
