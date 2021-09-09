@@ -8,6 +8,7 @@ results/multi_particle
 results/payoff_matrix
 results/final_results
 venv/
+test.gif
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
