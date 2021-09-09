@@ -5,6 +5,8 @@ results/sacred
 results/traffic
 results/access_point
 results/multi_particle
+results/payoff_matrix
+results/final_results
 venv/
 
 # Byte-compiled / optimized / DLL files

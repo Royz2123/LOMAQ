@@ -114,7 +114,7 @@ def main():
     alg_name = get_param(params, "--alg-name")
 
     # Seed is randomly generated for a single run like this
-    seed = random.randrange(sys.maxsize)
+    seed = random.randrange(2 ** 32 - 1)
 
     single_run(env_name, alg_name, seed)
 

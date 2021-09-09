@@ -4,7 +4,7 @@
 # number of tests to run (runs of main)
 num_runs: 4
 env_name: multi_cart
-alg_name: [local_qmix,qmix,iql_local,iql]
+alg_name: [lomaq,qmix,iql_local,iql]
 
 # If an argument is in single value form - then it is constant throught all the runs
 # If an argument is in a list of length 2, then the program will assume a series of airthmetic progression [min, max]

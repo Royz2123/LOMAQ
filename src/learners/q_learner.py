@@ -4,8 +4,8 @@ import torch as th
 from torch.optim import RMSprop
 import numpy as np
 
-from modules.mixers.local_qmix import LocalQMixer
-from modules.mixers.gcn.gcn_local_qmix import GraphQMixer
+from modules.mixers.lomaq import LocalQMixer
+from modules.mixers.gcn.gcn_lomaq import GraphQMixer
 from modules.mixers.vdn import VDNMixer
 from modules.mixers.qmix import QMixer
 
@@ -36,7 +36,7 @@ class QLearner:
                 self.mixer = VDNMixer()
             elif args.mixer == "qmix":
                 self.mixer = QMixer(args)
-            elif args.mixer == "local_qmix":
+            elif args.mixer == "lomaq":
                 if getattr(args, "use_gcn", False):
                     self.mixer = GraphQMixer(args=args)
                 else:

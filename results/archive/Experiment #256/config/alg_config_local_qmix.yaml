@@ -17,9 +17,9 @@ l_params:
   update_type: hard
 learner: q_learner
 local_observer: true
-mixer: local_qmix
+mixer: lomaq
 mixing_embed_dim: 32
-name: local_qmix
+name: lomaq
 parameter_sharing: true
 reward_acc: 0.9
 reward_batch_size: 50

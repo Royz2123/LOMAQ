@@ -4,7 +4,7 @@ export DISPLAY=localhost:0.0
 LANG=en_US
 
 env_name="multi_particle";
-alg_name="local_qmix";
+alg_name="lomaq";
 
 if [ "$#" -eq 2 ]; then
   env_name=$1;
@@ -12,7 +12,7 @@ if [ "$#" -eq 2 ]; then
 fi
 if [ "$#" -gt 2 ] || [ "$#" -eq 1 ]; then
   echo "Usage: run_multi_bash.sh [env-name] [alg-name]";
-  echo "Usage: If no parameters are provided, multi_particle and local_qmix are assumed.";
+  echo "Usage: If no parameters are provided, multi_particle and lomaq are assumed.";
   exit 1;
 fi
 

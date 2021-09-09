@@ -15,9 +15,9 @@ l_params:
   update_interval_t: 100000
   update_type: hard
 learner: q_learner
-mixer: local_qmix
+mixer: lomaq
 mixing_embed_dim: 32
-name: local_qmix
+name: lomaq
 parameter_sharing: true
 runner: episode
 target_update_interval: 50

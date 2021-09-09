@@ -2,7 +2,7 @@
 
 num_runs: 2
 env_name: payoff_matrix
-alg_name: [ local_qmix, qmix ]
+alg_name: [ lomaq, qmix ]
 
 override:
   # Things that tend to get change in the local machine, just override

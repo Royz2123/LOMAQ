@@ -8,8 +8,8 @@ epsilon_start: 1.0
 hypernet_embed: 32
 hypernet_layers: 2
 learner: q_learner
-mixer: local_qmix
+mixer: lomaq
 mixing_embed_dim: 16
-name: local_qmix
+name: lomaq
 runner: episode
 target_update_interval: 50

@@ -2,7 +2,7 @@
 
 num_runs: 3
 env_name: multi_particle
-alg_name: local_qmix
+alg_name: lomaq
 
 override:
   # Things that tend to get change in the local machine, just override

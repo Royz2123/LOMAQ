@@ -5,6 +5,11 @@ Our method leverages local agent rewards for improving credit assignment, whilst
 cooperative objective. In addition, we provide a direct decomposition method for finding local 
 rewards when only a global reward is provided.
 
+Our code extends the [pymarl repository](https://github.com/oxwhirl/pymarl), although the code
+has been significantly modified for our setting.
+
+![LOMAQ architecture](https://raw.githubusercontent.com/Royz2123/LOMAQ/main/documentation/architecture3.png)
+
 ## Installation
 
 The code is written in Python 3, with extensive use of the Pytorch library. Installation of the
@@ -30,7 +35,7 @@ that are relevant for running the enviroment. An example of this is `num_agents`
 * **Algorithm Configuration** - found under `src/algs/<alg-name>.yaml`. This file depicts the parameters
 for the current algorithm. An example of this is `learning_rate`. 
   
-* **Test Configuration** - found under `src/test/<test-name>.yaml`. This file depicts information for
+* **Test Configuration** - found under `src/test/test<test-num>.yaml`. This file depicts information for
 a specific test. For instance, if one wishes to run a certain algorithm against different num_agents, 
   this should be done using a seperate test file. Each test file depicts a series of runs. See 
   `src/test/example_test.yaml` for an example of this. This config file overrides all other configurations. 
@@ -76,4 +81,41 @@ If one wishes to only run a single run from a test, this can be done using `src/
 
 ```shell
 python3 src/single_main.py --test-num=53 --iteration-num=10 --run-num=2
+```
+
+## Code Roadmap
+
+The following file diagram depicts an outline of the code, with explanations
+regarding key modules in our code. 
+
+```
+LOMAQ
+└───documentation (includes some figures from the paper)   
+└───results (where local results are stored)   
+└───scripts (runnable scripts that are described above)  
+└───src (main code folder)
+│   └───config (configuration files described above)
+│   └───envs (used environments, includes multi_cart (Coupled Multi Cart Pole), multi_particle (Bounded Cooperative Navigation), payoff_matrix....
+│   └───reward_decomposition (includes the full implementation for our RD method)
+│   └───learners (the main learning loop, bellman updates)
+│   │   │   q_learner (a modified q_learner that supports local rewards and rweard decomposition)
+│   │   │   ...
+│   └───modules (NN module specifications)
+│   │   └───mixers (Mixing layers specifications)
+│   │   │   │   gcn (a GCN implementation for LOMAQ, occasionly used)
+│   │   │   │   lomaq.py (The main specification of our mixing networks)
+│   │   │   │   ...
+│   └───controllers (controls a set of agent utlity networks)
+│   │   │   hetro_controller.py (an agent controller that doesn't implement parameter sharing)
+│   │   │   ...
+│   └───components (general components for LOMAQ)
+│   │   │   locality_graph.py (A module that efficiently represents the graph of agents)
+│   │   │   ...
+│   │   main.py (for running a certain env-alg pair with default parameters)
+│   │   multi_main.py (for running a certain test with multiple runs)
+│   │   single_main.py (for running arun within a test)
+│   │   offline_plot.py (for plotting results)
+│   │   ...
+│   README.md (you are here)
+│   ...
 ```
