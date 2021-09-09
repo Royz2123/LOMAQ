@@ -15,8 +15,8 @@ if [ "$#" -eq 3 ]; then
   iteration_num=$2;
   run_num=$3;
 fi
-if [ "$#" -gt 3 -o "$#" -lt 2]; then
-  echo "Usage: sh scripts/single_bash.sh [test-num] [optional: iteration_num (default=0)] [run-num]";
+if [ "$#" -gt 3 ] || [ "$#" -lt 2 ]; then
+  echo "Usage: sh scripts/single_server.sh [test-num] [optional: iteration_num (default=0)] [run-num]";
   exit 1;
 fi
 

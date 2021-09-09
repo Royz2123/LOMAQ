@@ -11,7 +11,7 @@ if [ "$#" -eq 2 ]; then
   alg_name=$2;
 fi
 if [ "$#" -gt 2 ] || [ "$#" -eq 1 ]; then
-  echo "Usage: run_multi_bash.sh [env-name] [alg-name]";
+  echo "Usage: sh scripts/run_server.sh [env-name] [alg-name]";
   echo "Usage: If no parameters are provided, multi_particle and lomaq are assumed.";
   exit 1;
 fi

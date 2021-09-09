@@ -16,10 +16,10 @@ if [ "$#" -eq 3 ]; then
   run_num=$3;
 fi
 if [ "$#" -gt 3 ] || [ "$#" -lt 2 ]; then
-  echo "Usage: sh scripts/single_bash.sh [test-num] [optional: iteration_num (default=0)] [run-num]";
+  echo "Usage: sh scripts/single_local.sh [test-num] [optional: iteration_num (default=0)] [run-num]";
   exit 1;
 fi
 
-echo "Running test for test num $test_num, with iteration num $iteration_num, with run index $run_num"
+echo "Running test for test num $test_num, with run index $run_num, with iteration num $iteration_num"
 
 python3 src/single_main.py --test-num=$test_num --iteration-num=$iteration_num --run-num=$run_num
