@@ -1,16 +1,23 @@
-# All parameters that we wish to change during the multi_run
-# Differs from the config files! watch out for collisions. This yaml triumphs in terms of collisions
+# This is an example test file. A quick explanation regarding test files from the README:
 
-# number of tests to run (runs of main)
-num_runs: 2
-env_name: multi_particle
-alg_name: lomaq
+# ...Test Configuration - found under `src/test/test<test-num>.yaml`. This file depicts information for
+# a specific test. For instance, if one wishes to run a certain algorithm against different num_agents,
+# this should be done using a seperate test file. Each test file depicts a series of runs. See
+# `src/test/example_test.yaml` for an example of this. This config file overrides all other configurations
 
-# If an argument is in single value form - then it is constant throught all the runs
-# If an argument is in a list of length 2, then the program will assume a series of airthmetic progression [min, max]
-# If an argument is a list of any other length, then it must be of size "num_tests"
-# Argument name and heirarchy must exist in the config files
+# Every test consists of several runs, where each run can consist of a different combination of hyper-parameters.
+# This exampple test file shows how to run the multi_particle with changing #agents
 
-override:
-  human_mode: False
-  depth_k: [0, 1]
+# All test files MUST include the 4 following parameters:
+num_runs: 5                       # number of runs for this test
+env_name: multi_particle          # environment name (as specified in corresponding config in src/config/envs/<env-name>.yaml)
+alg_name: lomaq                   # algorithm name (as specified in corresponding config in src/config/algs/<alg_name>.yaml)
+override:                         # The parameters that this test overrides
+
+  # If a paramater is in a numerical list of length 2, then the program will assume a series of arithmetic progression [min, max]
+  # If a parameter is a list of size "num_tests", it will be looped thorugh
+  # In any other case - then it is constant throughout all the runs
+  # Parameter name and heirarchy must exist in the config files
+
+  env_args:
+    num_agents: [1, 2, 5, 10, 20]  # change the number of agents for every run

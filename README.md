@@ -25,20 +25,20 @@ pip install -r requirements.txt
 Our method is dependent on hyper-parameters that can be found under `src/config/`. There are 4 different 
 types of configuration files
 
-* **Default Configuration** - found under `src/default.yaml`. This file depicts the default parameters
+* **Default Configuration** - found under `src/config/default.yaml`. This file depicts the default parameters
 for all runs. Is overriden by any other configuration file. An example of a parameter here could be
   `batch_size`, which is generally similar for all algorithms. 
 
-* **Enviroment Configuration** - found under `src/envs/<env-name>.yaml`. This file depicts the parameters
+* **Enviroment Configuration** - found under `src/config/envs/<env-name>.yaml`. This file depicts the parameters
 that are relevant for running the enviroment. An example of this is `num_agents`. 
   
-* **Algorithm Configuration** - found under `src/algs/<alg-name>.yaml`. This file depicts the parameters
+* **Algorithm Configuration** - found under `src/config/algs/<alg-name>.yaml`. This file depicts the parameters
 for the current algorithm. An example of this is `learning_rate`. 
   
-* **Test Configuration** - found under `src/test/test<test-num>.yaml`. This file depicts information for
+* **Test Configuration** - found under `src/config/test/test<test-num>.yaml`. This file depicts information for
 a specific test. For instance, if one wishes to run a certain algorithm against different num_agents, 
   this should be done using a seperate test file. Each test file depicts a series of runs. See 
-  `src/test/example_test.yaml` for an example of this. This config file overrides all other configurations. 
+  `src/config/test/example_test.yaml` for an example of this. This config file overrides all other configurations. 
   
 ## Running the Code
 
