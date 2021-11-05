@@ -1,0 +1,80 @@
+# FINAL TEST! Tests scalability of multi_particle
+
+num_iterations: 1
+num_runs: 2
+env_name: multi_particle
+alg_name: [ lomaq,qmix ]
+
+override:
+  # Things that tend to get change in the local machine, just override
+  test_nepisode: 10
+  human_mode: False
+  test_interval: 10000
+  log_interval: 10000
+
+  # Dynamic changes
+  decompose_reward: False
+
+  # Constant changes
+  # Monotonicity
+  monotonicity_method: "weights"
+  monotonicity_network: "relu"
+
+  # Architecture
+  submixer_parameter_sharing: True
+  submixer_non_share_depth: 2
+  value_depth_k: 1
+  mac: "basic_mac"
+
+  # Training
+  epsilon_anneal_time: 100000
+  t_max: 4000000
+
+  # Reward decomposition
+  reward_parameter_sharing: True
+  reward_batch_size: 5
+  reward_updates_per_batch: 1
+  viz_reward_decomposition: False
+  reward_viz_interval: 1000
+  reward_diff_threshold: 0.1
+  reward_acc: 0.9
+  assume_binary_reward: False
+  regularizing_weight: 0
+  reward_beta2: 1
+  reward_l: 1
+  reward_index_in_obs: -1
+
+  # Enviroment
+  env_args:
+    rules:
+      obs:
+        agents: "none"
+        landmarks: "local"
+        show_num_agents_on_landmark: True
+
+      grid:
+        use_grid: True
+
+        # num of agents in every direction
+        num_x_agents: 50
+        num_y_agents: 1
+
+        # distances between the gridded agent's bounds
+        grid_dist_x: 0.75
+        grid_dist_y: 2.10
+
+        # how much should the odd cols of agents be offsetted in the y direction
+        grid_offset: 0
+
+        # spawn radius for both the agents and the landmarks
+        agent_spawn_radius: 0.5
+        landmark_spawn_radius: 1.0
+
+        # Where should each landmark spawn relative to it's bound center?
+        landmark_spawn_offset_x: 0
+        landmark_spawn_offset_y: 0
+
+        # Where should each agent spawn relative to it's bound center?
+        agent_spawn_offset_x: 0
+        agent_spawn_offset_y: 0
+
