@@ -1,9 +1,9 @@
 # FINAL TEST! Tests REAL scalability of multi_cart
 
 num_iterations: 1
-num_runs: 2
+num_runs: 3
 env_name: multi_cart
-alg_name: [ lomaq,qmix ]
+alg_name: [ lomaq,qmix,iql_local ]
 
 override:
   # Things that tend to get change in the local machine, just override
