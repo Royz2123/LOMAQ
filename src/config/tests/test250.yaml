@@ -46,6 +46,6 @@ override:
 
   env_args:
     episode_limit: 200
-    num_cartpoles: 20
+    num_cartpoles: 15
 
 
