@@ -1,9 +1,9 @@
 # FINAL TEST! Tests scalability of multi_cart
 
 num_iterations: 3
-num_runs: 9
+num_runs: 6
 env_name: multi_cart
-alg_name: [ lomaq,lomaq,qmix,iql_local,iql,vdn,qtran,graphmix,ow_qmix ]
+alg_name: [ lomaq,lomaq,qmix,iql_local,graphmix,ow_qmix ]
 
 override:
   # Things that tend to get change in the local machine, just override
@@ -13,7 +13,7 @@ override:
   log_interval: 10000
 
   # Dynamic changes
-  decompose_reward: [False, True, False, False, False, False, False, False, False]
+  decompose_reward: [False, True, False, False, False, False]
 
   # Constant changes
   # Monotonicity
@@ -46,6 +46,6 @@ override:
 
   env_args:
     episode_limit: 200
-    num_cartpoles: 15
+    num_cartpoles: 20
 
 
