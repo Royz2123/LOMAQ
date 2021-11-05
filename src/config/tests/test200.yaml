@@ -1,4 +1,4 @@
-# FINAL TEST! Tests scalability of multi_particle
+# FINAL TEST! Tests REAL scalability of multi_particle
 
 num_iterations: 1
 num_runs: 2
